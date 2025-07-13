@@ -1,6 +1,4 @@
-import base64
 import json
-import logging
 import random
 import re
 import time
@@ -24,10 +22,10 @@ def get_discord_status():
         return None
 
 
-def get_server_status(server_invite: str):
+def get_server_status():
     try:
         # extract the invite code from the URL
-        match = server_invite.split("/")[-1]
+        match = const.DISCORD_INVITE.split("/")[-1]
         req = requests.get(f"https://discord.com/api/v9/invites/{match}", timeout=5)
         req.raise_for_status()
         resp = req.json()
@@ -42,18 +40,6 @@ def get_server_status(server_invite: str):
             "members": resp.get("profile", {}).get("member_count", 0),
             "online": resp.get("profile", {}).get("online_count", 0),
         }
-    except (requests.exceptions.RequestException, json.JSONDecodeError, KeyError):
-        return None
-
-
-def get_discord_invite():
-    try:
-        widget = (requests.get(
-            f"https://discord.com/api/v9/guilds/{const.SERVER_ID}/widget.json"
-        ).json())
-        invite = widget.get("instant_invite")
-        invite = invite.replace("https://discord.com/invite/", "https://discord.gg/")
-        return invite
     except (requests.exceptions.RequestException, json.JSONDecodeError, KeyError):
         return None
 

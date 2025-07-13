@@ -1,7 +1,6 @@
 import datetime
 import json
 import os
-import random
 import urllib.parse
 from hashlib import sha256
 from threading import Thread
@@ -22,7 +21,7 @@ import jammingen
 import robots
 from blog import get_blog_posts
 from dino import dino_game
-from helpers import get_discord_status, get_discord_invite, get_age, show_notification, \
+from helpers import get_discord_status, get_age, show_notification, \
     format_iso_date, fishlogic, random_copyright_year, get_server_status
 from spotify import spotify_status_updater, event_reader
 
@@ -51,7 +50,7 @@ def index():
     return render_template(
         'index.html',
         discord_status=discord_status,
-        discord_invite_url=discord_invite,
+        discord_invite_url=const.DISCORD_INVITE,
         discord_server_info=discord_server_info,
         age=get_age(),
         # theme=theme,
@@ -487,7 +486,6 @@ def after_request(response):
 
 
 discord_status = ""
-discord_invite = None
 discord_server_info = {}
 
 blogs = get_blog_posts()
@@ -499,12 +497,10 @@ pgp_key = open('pgp', 'rb').read()
 
 
 def stats_updater():
-    global discord_status, discord_invite, discord_server_info
+    global discord_status, discord_server_info
     while True:
         discord_status = get_discord_status()
-        discord_invite = get_discord_invite()
-        if discord_invite:
-            discord_server_info = get_server_status(discord_invite)
+        discord_server_info = get_server_status()
         time.sleep(30)
 
 
