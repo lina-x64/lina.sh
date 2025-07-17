@@ -23,7 +23,7 @@ from blog import get_blog_posts
 from dino import dino_game
 from helpers import get_discord_status, get_age, show_notification, \
     format_iso_date, fishlogic, random_copyright_year, get_server_status
-from spotify import spotify_status_updater, event_reader
+from spotify import spotify_status_updater, event_reader, get_cover_bytes
 
 app = Flask(__name__, template_folder='pages')
 if os.getenv("FLASK_DEBUG") != "1":
@@ -443,14 +443,14 @@ def parrot():
     return Response(str(request.headers), mimetype="text/plain")
 
 
-@app.route('/spotify-image-proxy/<image_id>')
-@lru_cache(maxsize=10)
+@app.route('/spotify-cover.png')
 @robots.noindex
-@robots.disallow
-def spotify_image_proxy(image_id):
-    req = requests.get(f"https://i.scdn.co/image/{image_id}")
-    resp = make_response(req.content)
-    resp.headers["Content-Type"] = req.headers["Content-Type"]
+def spotify_image_proxy():
+    spotify_cover_bytes = get_cover_bytes()
+    if not spotify_cover_bytes:
+        return "Spotify cover not available", 503
+    resp = make_response(spotify_cover_bytes)
+    resp.headers["Content-Type"] = "image/png"
     resp.headers["Cache-Control"] = f"public, max-age={60 * 60 * 24}"
     return resp
 

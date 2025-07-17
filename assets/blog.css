@@ -325,10 +325,10 @@ p, figure, ul, ol, pre, blockquote, table {
     margin: 0;
 }
 
-p {
-    text-align: justify;
-    text-justify: inter-character;
-}
+/*p {*/
+/*    text-align: justify;*/
+/*    text-justify: inter-character;*/
+/*}*/
 
 @media (max-width: 800px) {
     p {

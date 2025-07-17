@@ -1,6 +1,4 @@
 import base64
-import hashlib
-import hmac
 import json
 import threading
 import time
@@ -40,13 +38,6 @@ class Lyrics:
                 break
         return latest_line
 
-    # def get_all_next_lyrics(self, timestamp: float):
-    #     # all where > timestamp
-    #     new = {timestamp: self.get_last_lyrics(timestamp)}
-    #     new.update({ts: line for ts, line in self.lyrics.items() if ts > timestamp})
-    #     print(new)
-    #     return new
-
 
 def build_lyrics_css(lyrics: Lyrics | None, progress: float, duration: float, is_playing: bool) -> str:
     if lyrics is None or not is_playing:
@@ -66,30 +57,6 @@ def build_lyrics_css(lyrics: Lyrics | None, progress: float, duration: float, is
     lyrics_css.append(".song-lyrics { display: block; }")
     lyrics_css = "\n".join(lyrics_css)
     return lyrics_css
-
-
-# def generate_spotify_totp():
-#     try:
-#         # thank you https://github.com/KRTirtho/spotube/commit/59f298a935c87077a6abd50656f8a4ead44bd979 <3
-#         # req = requests.get("https://open.spotify.com/server-time")
-#         # time_interval = req.json()["serverTime"] // 30
-#         time_interval = int(time.time() // 30)
-#
-#         hmac_hash = hmac.new(
-#             key=b'5507145853487499592248630329347',
-#             msg=time_interval.to_bytes(8, "big"),
-#             digestmod=hashlib.sha1
-#         ).digest()
-#
-#         offset = hmac_hash[-1] & 0xF
-#         code = ((hmac_hash[offset] & 0x7F) << 24 |
-#                 (hmac_hash[offset + 1] & 0xFF) << 16 |
-#                 (hmac_hash[offset + 2] & 0xFF) << 8 |
-#                 (hmac_hash[offset + 3] & 0xFF))
-#
-#         return str(code % 10 ** 6).zfill(6)
-#     except (requests.exceptions.RequestException, ValueError):
-#         return "000000"
 
 
 def get_access_token(current_token_):
@@ -284,7 +251,8 @@ def fetch_spotify_preview(last_track_id: str) -> str | None:
 
 
 def spotify_status_updater():
-    global access_token, expires_on, last_event, current_token, current_lyrics, account_bearer, account_bearer_expires
+    global access_token, expires_on, last_event, current_token, current_lyrics, account_bearer, \
+        account_bearer_expires, cover_bytes, last_cover
     last_state = None
     last_track_id = None
     last_push = 0
@@ -338,7 +306,14 @@ def spotify_status_updater():
             for cover_ in covers:
                 if cover_["height"] >= 100 and cover_["width"] >= 100:
                     cover = cover_["url"]
-            cover = cover.replace("https://i.scdn.co/image/", "/spotify-image-proxy/")
+
+            if cover != last_cover:
+                try:
+                    cover_bytes = requests.get(cover).content
+                    last_cover = cover
+                except requests.exceptions.RequestException:
+                    cover_bytes = None
+
             progress_float = status["progress_ms"] / 1000
             progress = int(progress_float)
             duration_float = status["item"]["duration_ms"] / 1000
@@ -415,7 +390,7 @@ def spotify_status_updater():
                 content: "{artist}";
             }}
             .album-cover {{
-                background-image: url({cover});
+                background-image: url(/spotify-cover.png?hash={hash(cover)});
             }}
             .progress-bar::before {{
                 width: {progress * 100 / duration}%;
@@ -462,8 +437,14 @@ def spotify_status_updater():
         time.sleep(1.5)
 
 
+def get_cover_bytes():
+    return cover_bytes
+
+
 access_token, expires_on = get_access_token("main")
 account_bearer, account_bearer_expires = None, 0
 current_token: Literal["main", "fallback"] = "main"
 last_event = ""
 current_lyrics: Lyrics | None = None
+cover_bytes = None
+last_cover = None
