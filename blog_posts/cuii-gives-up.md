@@ -59,4 +59,4 @@ letting powerful corporations decide what Germans are allowed to access online.
 This power finally no longer belongs to them, but now rightfully belongs in court, which is a *long* overdue step. 
 They are not above the law, and they never should have been.  
 <br>
-You can read an article in German about this: https://netzpolitik.org/todo
+You can read an article in German about this: [https://netzpolitik.org/2025/die-cuii-gibt-auf-fuer-netzsperren-braucht-es-jetzt-einen-gerichtsentscheid/](https://netzpolitik.org/2025/die-cuii-gibt-auf-fuer-netzsperren-braucht-es-jetzt-einen-gerichtsentscheid/)

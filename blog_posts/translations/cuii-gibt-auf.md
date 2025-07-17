@@ -63,4 +63,4 @@ Interesse von großen Firmen entschieden hat, wer was im Internet sehen darf. Da
 Konzernen liegt, sondern vor Gericht gehört, ist ein überfälliger Schritt.
 Riesige Rechteinhaber stehen nicht über dem Gesetz, und sie hätten es auch nie tun dürfen.  
 <br>
-Ein Artikel dazu von Netzpolitik.org: https://netzpolitik.org/todo
+Ein Artikel dazu von Netzpolitik.org: [https://netzpolitik.org/2025/die-cuii-gibt-auf-fuer-netzsperren-braucht-es-jetzt-einen-gerichtsentscheid/](https://netzpolitik.org/2025/die-cuii-gibt-auf-fuer-netzsperren-braucht-es-jetzt-einen-gerichtsentscheid/)
