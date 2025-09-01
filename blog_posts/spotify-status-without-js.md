@@ -4,108 +4,125 @@ Date: 2024-12-08
 Image: /assets/blog/spotify-status.png
 Hash: spotify
 ---------
-## The challenge
+## The challenge: A real-time status using CSS only
 
-Typically, when you want real-time updates (like displaying the song you're listening to on Spotify), 
-you'd use JavaScript. 
-But well, my website *was* written fully without JavaScript, and I didn't want to just "throw that away" for adding a Spotify status.
-I wanted to avoid JavaScript completely and still keep the status updated **automatically and dynamically**.
+Typically, when you want real-time updates on a website, like displaying the song you're currently listening to on
+Spotify, you use JavaScript. It's just what you use for fetching data and manipulating the page dynamically. 
+You would never do some cursed CSS-only solution, right? How would you even fetch data without JavaScript?
 
-Here's the trick: 
-I used server-side streaming and some silly use of CSS. No JavaScript, just "basic" HTML and CSS (and a bit of Python in the backend).
+Well, my website was built to be completely JavaScript-free, and I didn't want to "throw that away" for a single
+feature. 
+So my goal was: Building a **fully automatic and dynamically updating** Spotify status without 
+writing a single line of client-side JavaScript?  
+It turns out this _is_ possible. 
+The trick involves server-side streaming and a rather silly, but effective, use of CSS.
 
-## How it works
-The basic idea is pretty simple:  
-The connection that fetches the HTML is kept open. This allows the server to "append" new data at the end of the HTML file.  
-I can now send `<style>` tags every time the status changes, these tags contain the new spotify status and overwrite the old one.  
+## The solution: Streaming CSS updates
 
-## No JavaScript, just HTML and CSS in the frontend
-Instead of changing the actual HTML structure or DOM (which is what JavaScript would normally do), I simply update the CSS. 
-Yep, all the dynamic changes - like song title, progress, album art - are handled by changing the styles.
+The core idea is surprisingly simple: instead of fetching a complete HTML file and closing the connection, the server
+just never closed the connection; it keeps the connection to the browser open. 
+This allows the server to continuously "append" new data to the page, after the browser already loaded it.
 
-Here's how I do it:
-<ul>
-    <li> I create a skeleton HTML page that contains placeholders for things like the song title and album art.</li>
-    <li> I keep the connection open between the server and the browser using something called server-sent events (essentially, a live stream of data from the server to the browser).</li>
-    <li> When there’s an update (song change, playback status, etc.), I inject new CSS into the page. This CSS is what updates things like the song title and progress bar.</li>
-</ul>
+Instead of changing the page content with JavaScript, I just send new `<style>` tags. 
+Every time my Spotify status changes, the server injects a new block of CSS that overwrites the previous styles. 
+All the dynamic elements you see (the song title, artist, album art, and the progress bar) 
+are controlled entirely by these streamed CSS rules.
 
-This idea was suggested to me by my friend yui ([https://zptr.cc/](https://zptr.cc/)), 
-whose website is genuinely amazing, please check it out!
+My friend yui ([https://yui.dev/](https://yui.dev/)), whose website is genuinely amazing, was the one who suggested this
+clever approach to me. Please check out their work!
 
-### Example: Injecting CSS for a song update
-When the server detects that a song has changed, instead of manipulating the DOM, I send the new song title as a CSS rule. It might look like this:
+Here’s a simplified example of what the server sends when a new song starts playing:
 ```html
+
 <style>
-  .song-title::before {
-    content: "New Song Title";
-  }
+    .song-title::before {
+        content: "New Song Title";
+    }
 </style>
 ```
-This CSS rule gets appended at the bottom of the page and updates the `.song-title` element with the new song title. 
-And because CSS is cascading (the last rule "wins"), it overrides the old song title.
-For song progress, I use CSS animations to move the progress bar forward, which runs based on the current playback position.
 
-## Syncing everything
-Now, one issue with CSS animations is that they’re not always perfectly synced to real-time events. 
-So to make sure everything is accurate, I send a full update (with fresh CSS) every few seconds. 
-That way, if something is off, like the song is paused or the progress bar is wrong, the page automatically corrects itself.
-Every five seconds, the server sends a full update with the current song, progress, and album art. 
-If something changes in the meantime, if I for example pause the song, skip to the next one, or change the timestamp, the **server sends an update immediately**.
-<video controls>
-  <source src="/assets/blog/spotify-playing.webm" type="video/webm">
-  <source src="/assets/blog/spotify-playing.mp4" type="video/mp4">
-</video>
+This new rule is added to the bottom of the document. Thanks to the "cascading" part of Cascading Style Sheets (CSS),
+the last rule defined for an element wins. The new content simply overwrites the old one, and the song title on the page
+changes instantly.
 
-## The code behind it
-Instead of using JavaScript to make API requests and update the DOM, the server periodically checks Spotify for the latest status (song title, artist, playback position) and then sends updates via an open connection to the browser. It might look something like this (simplified):
+## The backend
 
-1. The server listens for events (like song changes or playback updates). 
-2. When something changes, it generates new CSS based on the current status. 
-3. It sends this CSS to the browser in real-time via the open connection.
+So, how does the server know when to send an update? I use a simple Python with Flask. 
+The server permanently checks the Spotify API for my latest status (song title, artist, playback position).
 
-With Flask (a python-webserver, this is what use for my backend), this is actually quite simple!  
-I just write a python generator that yields the CSS updates, and Flask takes care of the rest.
+When it detects a change, it generates the new CSS and sends it down all open connections. 
+In Flask, this is easy to do with a python generator that `yield`s the CSS updates as events happen.
+
+A grossly oversimplified version of the code looks like this:
+
 ```python
 while True:
+    # This line waits for a new event (e.g., song change) to come in
     event = event_queue.get()
     if event is None:
         break
+    # This sends the new CSS to the browser
     yield event
 ```
-Here, `event_queue.get()` is waiting for new events to come in.
-Now I can just add anything I want to the `event_queue` and it will be sent to the browser in real-time!
 
-## Why does this work?
-Here’s the cool part: the server doesn’t need to manipulate the actual content on the page. 
-It only sends updated CSS, and since CSS can control a lot of things (like content, animations, and even visibility), it’s all I need to keep the page updated.
+I can add any update I want to the `event_queue`, and it gets streamed to the browser in real-time.
 
-By keeping the server connection open and continuously sending updates (in the form of CSS), I get the same real-time effect you’d get with JavaScript, but without ever touching JS. 
-It's essentially "live-updating" without the need for client-side code. Pretty neat, huh?
+## Keeping everything perfectly in sync
 
-## Problems 
-Of course, this approach isn't perfect.
-For example, if the connection is kept open, the browser will show the page as "loading" until the connection is closed.
-I solved this by first sending a fully loaded HTML page,
-which redirected you (using a Refresh header) to a page that appends itself after 5 s. 
-Since the website can't fall back to a loading state,
-the browser will display it as fully loaded, despite some elements *still* loading in the background.
-To "close" the spotify status I had to add a button on the *main* page which overlays the iframe,
-this toggles a checkbox which is used to hide the iframe.
+Now, a small problem with relying on CSS is that animations, like a progress bar, aren't always perfectly synced with
+the actual status.
+To solve this, my system updates the CSS in two ways:
+
+1. **Immediate Updates:** If I pause, skip, or jump to a different timestamp in a song, the server detects this and
+   sends a full CSS update **immediately**.
+2. **Periodic Resync:** To correct any potential de-sync, the server also sends a complete, fresh set of CSS rules every
+   five seconds, ensuring the progress bar and other details are always accurate.
+
+Here's a look at it in action:
+
+<video controls>
+    <source src="/assets/blog/spotify-playing.webm" type="video/webm">
+    <source src="/assets/blog/spotify-playing.mp4" type="video/mp4">
+</video>
+
+## Problems... (and solutions)
+This approach isn't without its issues. The most obvious issue is that with a constantly open connection, the
+browser's tab will show a "loading" spinner. 
+
+I solved this with a little trickery. 
+I load the widget in an iframe, the initial HTML page loads completely and then uses a `Refresh` header to redirect to
+a second page after 5 seconds. This second page is the one that uses the "open" connection. Because the initial page
+finished loading, the browser considers the site "loaded", even while the Spotify element continues to receive
+background updates.
+
+Another issue was adding a button to open the current song in Spotify. The solution: Overlay a new `<a>` element, every
+time the song changes, with the correct link to open the song in Spotify. This *does* mean that if you 
+have my website open for hours, you will end up with hundreds of `<a>` elements stacked on top of each other.
+
+Also, if you keep the page open for a very long time, the CSS will grow indefinitely. 
+This is less of a problem than expected, as the CSS is "just text" and rather small, and browsers are quite good at 
+optimizing it. Unless you plan on keeping the connection open for weeks, this shouldn't be an issue.
+
+## Update: Perfectly synced live lyrics!
+
+I've since pushed this concept even further by adding live lyrics. By *totally* not breaking Spotify's ToS to fetch the
+lyric data, I can get the timestamps for every line.
+
+The server sends all the lyrics and their timings to the browser as a single, keyframed CSS animation when the song
+first loads. This means the entire synchronization happens client-side within CSS, and the server only needs to send one
+update per song change. The result is lyrics that are almost perfectly synced to what I'm hearing.
 
 ## Conclusion
-It's a fun little experiment that shows how you can achieve real-time updates without JavaScript.
-Yes, it would've been way easier with JavaScript, and I spent way too many hours on this, *but* it was incredibly fun to figure out!  
-    
-The code for this can be found on my GitHub:
+
+This was an incredibly fun experiment, and I spent way too many hours on it. 
+Anyone sane enough should absolutely just use JavaScript for something like this; it would have been infinitely easier.
+
+But nevertheless, working on this was super fun, having to figure out 
+
+If you're curious to see the beautiful mess of code that makes this all work, you can find it on my GitHub:
 [https://github.com/lina-x64/lina.sh](https://github.com/lina-x64/lina.sh)
 
 
-## Update
-I added live lyrics, these are pretty much perfectly synced to what I hear. 
-I "simply" fetch the lyrics from Spotify (by *totally* not breaking their ToS), 
-and then sending them as a CSS animation. 
-That way, it is synced client-side, and I only need to send the lyrics if the song changes.
 
 <div class="listening-wrapper" id="status">
     <iframe loading="lazy" class="listening-to" src="/listening_to?refresh=1" allowtransparency="true"></iframe>
