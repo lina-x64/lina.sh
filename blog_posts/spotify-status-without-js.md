@@ -52,7 +52,10 @@ So to make sure everything is accurate, I send a full update (with fresh CSS) ev
 That way, if something is off, like the song is paused or the progress bar is wrong, the page automatically corrects itself.
 Every five seconds, the server sends a full update with the current song, progress, and album art. 
 If something changes in the meantime, if I for example pause the song, skip to the next one, or change the timestamp, the **server sends an update immediately**.
-<video src="/assets/blog/spotify-playing.mp4" autoplay loop muted></video>
+<video controls>
+  <source src="/assets/blog/spotify-playing.webm" type="video/webm">
+  <source src="/assets/blog/spotify-playing.mp4" type="video/mp4">
+</video>
 
 ## The code behind it
 Instead of using JavaScript to make API requests and update the DOM, the server periodically checks Spotify for the latest status (song title, artist, playback position) and then sends updates via an open connection to the browser. It might look something like this (simplified):
@@ -83,17 +86,26 @@ It's essentially "live-updating" without the need for client-side code. Pretty n
 ## Problems 
 Of course, this approach isn't perfect.
 For example, if the connection is kept open, the browser will show the page as "loading" until the connection is closed.
-I solved this by embedding the status in an iframe (which was lazy loaded) and only "teleporting" the status to the main page after 5 seconds,
-which is enough time for the website to load. Since the website can't fall back to a loading state,
+I solved this by first sending a fully loaded HTML page,
+which redirected you (using a Refresh header) to a page that appends itself after 5 s. 
+Since the website can't fall back to a loading state,
 the browser will display it as fully loaded, despite some elements *still* loading in the background.
-To "close" the spotify status I had to add a button on the *main* page which overlays the iframe, this toggles a checkbox which is used to hide the iframe.
+To "close" the spotify status I had to add a button on the *main* page which overlays the iframe,
+this toggles a checkbox which is used to hide the iframe.
 
 ## Conclusion
 It's a fun little experiment that shows how you can achieve real-time updates without JavaScript.
 Yes, it would've been way easier with JavaScript, and I spent way too many hours on this, *but* it was incredibly fun to figure out!  
     
 The code for this can be found on my GitHub:
-[https://github.com/DAMcraft/damcraft.de](https://github.com/DAMcraft/damcraft.de)
+[https://github.com/lina-x64/lina.sh](https://github.com/lina-x64/lina.sh)
+
+
+## Update
+I added live lyrics, these are pretty much perfectly synced to what I hear. 
+I "simply" fetch the lyrics from Spotify (by *totally* not breaking their ToS), 
+and then sending them as a CSS animation. 
+That way, it is synced client-side, and I only need to send the lyrics if the song changes.
 
 <div class="listening-wrapper" id="status">
     <iframe loading="lazy" class="listening-to" src="/listening_to?refresh=1" allowtransparency="true"></iframe>
