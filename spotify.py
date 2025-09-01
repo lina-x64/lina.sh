@@ -1,16 +1,13 @@
 import base64
-import json
 import threading
 import time
-from datetime import datetime
+import traceback
+from dataclasses import dataclass
 from json import JSONDecodeError
+from typing import Literal
 
 import requests
 from gevent import queue, lock
-import traceback
-from typing import Literal
-import bs4
-from gevent.timeout import Timeout
 from playwright.sync_api import sync_playwright
 
 import const
@@ -20,47 +17,31 @@ shared_event_queues = set()
 queue_lock = lock.RLock()
 
 
-class Lyrics:
-    def __init__(self, lines):
-        # sort lines by timestamp
-        self.lyrics = {}
-        for timestamp, words in lines.items():
-            self.lyrics[timestamp] = words
-        self.lyrics = dict(sorted(self.lyrics.items()))
+@dataclass
+class SpotifyState:
+    track_id: str
+    song_title: str
+    artist: str
+    cover_url: str
+    duration_ms: int
+    progress_ms: int
+    is_playing: bool
+    song_url: str
+    polled_at: float
 
-    def get_last_lyrics(self, timestamp: float):
-        # last where <= timestamp
-        latest_line = "", 0
-        for ts, line in self.lyrics.items():
-            if ts <= timestamp:
-                latest_line = line
-            else:
-                break
-        return latest_line
-
-
-def build_lyrics_css(lyrics: Lyrics | None, progress: float, duration: float, is_playing: bool) -> str:
-    if lyrics is None or not is_playing:
-        return ".song-lyrics { display: none; } .song-lyrics::after { animation: none; }"
-    unique_id = str(time.time()).replace(".", "")
-    lyrics_css = [
-        f".song-lyrics::after {{ animation: lyrics{unique_id} {duration}s steps(1) forwards; ",
-        f"animation-delay: {-progress}s; }}",
-        f"@keyframes lyrics{unique_id} {{"
-    ]
-
-    for ts, line in lyrics.lyrics.items():
-        progress_percentage = ts * 100 / duration
-        lyrics_css.append(f"{progress_percentage}% {{ content: '{css_escape(line)}'; }}")
-    lyrics_css.append("}")
-
-    lyrics_css.append(".song-lyrics { display: block; }")
-    lyrics_css = "\n".join(lyrics_css)
-    return lyrics_css
+    def __eq__(self, other):
+        # check if this is the same song
+        if other is None:
+            return False
+        if not isinstance(other, SpotifyState):
+            return False
+        return (self.track_id == other.track_id and
+                self.artist == other.artist and
+                self.cover_url == other.cover_url)
 
 
-def get_access_token(current_token_):
-    if current_token_ == "main":
+def get_access_token(token_type: Literal["main", "fallback"]):
+    if token_type == "main":
         refresh_token = const.SPOTIFY_REFRESH_TOKEN
         client_id = const.SPOTIFY_CLIENT_ID
         client_secret = const.SPOTIFY_CLIENT_SECRET
@@ -68,24 +49,27 @@ def get_access_token(current_token_):
         refresh_token = const.SPOTIFY_FALLBACK_REFRESH_TOKEN
         client_id = const.SPOTIFY_FALLBACK_CLIENT_ID
         client_secret = const.SPOTIFY_FALLBACK_CLIENT_SECRET
+
     auth = base64.b64encode(f"{client_id}:{client_secret}".encode()).decode()
-    headers = {
-        "Authorization": f"Basic {auth}",
-        "Content-Type": "application/x-www-form-urlencoded"
-    }
-    data = {
-        "grant_type": "refresh_token",
-        "refresh_token": refresh_token
-    }
-    response = requests.post("https://accounts.spotify.com/api/token", data=data, headers=headers)
-    if response.status_code == 200:
-        at = response.json().get("access_token")
-        expires_on = datetime.now().timestamp() + response.json().get("expires_in")
-        return at, expires_on
-    return None, 0
+    try:
+        response = requests.post(
+            "https://accounts.spotify.com/api/token",
+            data={"grant_type": "refresh_token", "refresh_token": refresh_token},
+            headers={"Authorization": f"Basic {auth}", "Content-Type": "application/x-www-form-urlencoded"}
+        )
+        response.raise_for_status()
+        if response.status_code == 404:
+            return None, 0
+        data = response.json()
+        return data.get("access_token"), time.time() + data.get("expires_in", 3600)
+    except requests.RequestException as e:
+        print(f"Error refreshing access token for {token_type}: {e}")
+        return None, 0
 
 
 def get_account_bearer() -> (str, int) or None:
+    # spotify keeps changing how their web player api works, this is normally *not* meant to be used by scripts,
+    # and they are intentionally making it more difficult for programs
     try:
         result = {"token": None, "expires": None}
         done_event = threading.Event()
@@ -131,10 +115,13 @@ def get_account_bearer() -> (str, int) or None:
         return None, 0
 
 
-def update_lyrics(track_id, retried=False) -> Lyrics | None:
+def fetch_lyrics(track_id: str, retried=False) -> dict[float, int] | None:
     global account_bearer, account_bearer_expires
-    if account_bearer_expires < time.time():
+    if time.time() > account_bearer_expires - 60:
+        print("Account bearer expired or is close to expiring, refreshing...")
         account_bearer, account_bearer_expires = get_account_bearer()
+        if not account_bearer:
+            return None
 
     try:
         req = requests.get(
@@ -152,299 +139,281 @@ def update_lyrics(track_id, retried=False) -> Lyrics | None:
         )
         if req.status_code in (401, 403) and not retried:
             account_bearer, account_bearer_expires = get_account_bearer()
-            return update_lyrics(track_id, retried=True)
+            return fetch_lyrics(track_id, retried=True)
+        if req.status_code == 404:
+            return None
+        req.raise_for_status()
         json_data = req.json()
-    except (requests.exceptions.RequestException, JSONDecodeError):
+    except (requests.exceptions.RequestException, JSONDecodeError) as e:
+        print(f"Failed to fetch lyrics for {track_id}: {e}")
         return None
-    if req.status_code != 200:
-        return None
+
     lyric_data = json_data.get("lyrics")
-    if not lyric_data:
+    if not lyric_data or lyric_data.get("syncType") != "LINE_SYNCED":
         return None
-    is_synced = lyric_data.get("syncType") == "LINE_SYNCED"
-    if not is_synced:
-        return None
-    line_data = lyric_data.get("lines")
-    lines = {0: "♪"}
-    for line in line_data:
-        words = line["words"]
-        if words != "♪":
+
+    lines = {0.0: "♪"}
+    for line in lyric_data.get("lines", []):
+        words = line.get("words", "").strip()
+        if not words:
+            continue
+        if "♪" not in words:
             words = "♪ " + words
-        # words = helpers.smart_split(words, 50)
         lines[int(line["startTimeMs"]) / 1000] = words
 
-    lyrics = Lyrics(lines)
-
-    return lyrics
+    return dict(sorted(lines.items()))
 
 
-def get_spotify_status(access_token):
+def get_spotify_status(token: str) -> dict | None:
     try:
-        req = requests.get("https://api.spotify.com/v1/me/player/currently-playing", headers={
-            "Authorization": f"Bearer {access_token}"
-        })
-        if req.status_code == 429:
-            return {"error": {"status": 429, "retry_after": req.headers.get("Retry-After")}}
-        return req.json()
-
-    except (requests.exceptions.RequestException, JSONDecodeError):
+        response = requests.get(
+            "https://api.spotify.com/v1/me/player/currently-playing",
+            headers={"Authorization": f"Bearer {token}"}
+        )
+        if response.status_code == 204:  # no content, nothing playing
+            return None
+        response.raise_for_status()
+        return response.json()
+    except requests.RequestException as e:
+        print(f"Error getting Spotify status: {e}")
+        # rate limiting
+        if e.response and e.response.status_code == 429:
+            retry_after = max(e.response.headers.get("Retry-After", 3), 3)
+            if retry_after > 1000:
+                print("We are being rate limited for too long, using fallback")
+                global current_token
+                if current_token == "main":
+                    current_token = "fallback"
+                else:
+                    current_token = "main"
+            print(f"Rate limited. Waiting for {retry_after} seconds.")
+            time.sleep(retry_after)
         return None
 
 
-def event_reader(start, skip_rest=False):
-    yield start
-    yield last_event
+def build_not_playing_css() -> str:
+    return """
+    <style>
+        .notification-content { display: none; }
+        .not-playing { display: flex; }
+    </style>
+    """
+
+
+def build_static_css(state: SpotifyState) -> str:
+    return f"""
+    <a href="{state.song_url}" class="open-song" target="_blank"><div><img src="/assets/open.svg" alt="Open"></div></a>
+    <style>
+        .notification-content {{ display: flex; }}
+        .not-playing {{ display: none; }}
+        .song-title::before {{ content: '{css_escape(state.song_title)}'; }}
+        .song-artist::before {{ content: '{css_escape(state.artist)}'; }}
+        .album-cover {{ background-image: url(/spotify-cover.png?h={hash(state.cover_url)}); }}
+        .song-length::before {{ content: '{state.duration_ms // 60000}:{(state.duration_ms // 1000) % 60:02d}'; }}
+    </style>
+    """
+
+
+def build_progress_css(state: SpotifyState) -> str:
+    progress_s = state.progress_ms / 1000 + (time.time() - state.polled_at if state.is_playing else 0)
+    duration_s = state.duration_ms / 1000
+    remaining_s = max(0.0, duration_s - progress_s)
+    unique_id = str(time.time()).replace(".", "")
+
+    progress_keyframes = ""
+    if state.is_playing:
+        progress_keyframes = f"""
+        @keyframes progress{unique_id} {{
+            to {{ width: 100%; }}
+        }}
+        """
+
+    seconds_keyframes = []
+    minutes_keyframes = []
+    # generate keyframes for a 10s timer
+    for i in range(11):
+        # if paused, keep the timer at the current progress
+        current_progress_tick = progress_s + i if state.is_playing else progress_s
+        if current_progress_tick > duration_s:
+            current_progress_tick = duration_s
+
+        seconds_keyframes.append(
+            f"{i * 10}% {{ counter-increment: seconds{unique_id} {int(current_progress_tick) % 60}; }}")
+        minutes_keyframes.append(
+            f"{i * 10}% {{ counter-increment: minutes{unique_id} {int(current_progress_tick) // 60}; }}")
+
+    return f"""
+    <style>
+        .progress-bar::before {{
+            width: {progress_s * 100 / duration_s}%;
+            animation: progress{unique_id} {remaining_s}s linear forwards;
+        }}
+        {progress_keyframes}
+
+        .seconds-progress::before {{
+            content: "0" counter(seconds{unique_id});
+            animation: countSeconds{unique_id} 10s steps(10) forwards;
+        }}
+        @keyframes countSeconds{unique_id} {{ {" ".join(seconds_keyframes)} }}
+
+        .minutes-progress::before {{
+            content: "0" counter(minutes{unique_id});
+            animation: countMinutes{unique_id} 10s steps(10) forwards;
+        }}
+        @keyframes countMinutes{unique_id} {{ {" ".join(minutes_keyframes)} }}
+
+        .paused {{ visibility: {"hidden" if state.is_playing else "visible"}; }}
+    </style>
+    """
+
+
+def build_lyrics_css(lyrics: dict[float, int], state: SpotifyState) -> str:
+    if not lyrics or not state.is_playing:
+        return "<style>.song-lyrics { display: none; }</style>"
+
+    progress_s = state.progress_ms / 1000 + (time.time() - state.polled_at)
+    duration_s = state.duration_ms / 1000
+    unique_id = str(time.time()).replace(".", "")
+
+    css = [
+        f".song-lyrics::after {{ animation: lyrics{unique_id} {duration_s}s steps(1) forwards; animation-delay: {-progress_s}s; }}",
+        f"@keyframes lyrics{unique_id} {{"
+    ]
+    for ts, line in lyrics.items():
+        percentage = ts * 100 / duration_s
+        css.append(f"{percentage:.4f}% {{ content: '{css_escape(line)}'; }}")
+    css.append("}")
+    css.append(".song-lyrics { display: block; }")
+    return f"<style>{' '.join(css)}</style>"
+
+
+def event_reader(start_html: str, skip_rest=False):
+    yield start_html
+    # new clients get the base state first and refresh later over the meta tag
+    if last_state is None:
+        yield build_not_playing_css()
+    else:
+        yield build_static_css(last_state)
+        yield build_progress_css(last_state)
+        if current_lyrics:
+            yield build_lyrics_css(current_lyrics, last_state)
+        else:
+            yield "<style>.song-lyrics { display: none; }</style>"
+
     if skip_rest:
         return
 
-    event_queue = queue.Queue(maxsize=10)
-
+    event_queue = queue.Queue(maxsize=20)
     with queue_lock:
         shared_event_queues.add(event_queue)
 
     try:
         while True:
             try:
-                with Timeout(10):  # check for new events every 10 seconds
-                    event = event_queue.get()
-                    if event is None:
-                        break
-                    yield event
-            except Timeout:
-                yield ""  # keep alive
-                continue
-    except GeneratorExit:  # client disconnected
-        pass
+                event = event_queue.get(timeout=10)
+                if event is None:
+                    break
+                yield event
+            except queue.Empty:
+                yield " \n"  # keep connection alive
     finally:
         with queue_lock:
             shared_event_queues.discard(event_queue)
 
 
-def event_writer(event):
+def event_writer(event: str):
     with queue_lock:
-        dead_queues = []
-
-        for q in shared_event_queues:
+        # use a copy to avoid issues with modifying the set while iterating
+        for q in list(shared_event_queues):
             try:
                 q.put_nowait(event)
             except queue.Full:
-                dead_queues.append(q)
-            except Exception:
-                dead_queues.append(q)
-
-        # clean up
-        for q in dead_queues:
-            shared_event_queues.discard(q)
-
-
-def fetch_spotify_preview(last_track_id: str) -> str | None:
-    try:
-        req = requests.get(f"https://open.spotify.com/embed/track/{last_track_id}")
-        if req.status_code != 200:
-            return None
-        bs = bs4.BeautifulSoup(req.text, "html.parser")
-        data = bs.find("script", {"id": "__NEXT_DATA__"}).string
-        data = json.loads(data)
-        return data["props"]["pageProps"]["state"]["data"]["entity"]["audioPreview"]["url"]
-    except (requests.exceptions.RequestException, JSONDecodeError, KeyError):
-        return None
+                shared_event_queues.discard(q)
 
 
 def spotify_status_updater():
-    global access_token, expires_on, last_event, current_token, current_lyrics, account_bearer, \
-        account_bearer_expires, cover_bytes, last_cover
-    last_state = None
-    last_track_id = None
-    last_push = 0
+    global access_token, expires_on, current_token, current_lyrics, cover_bytes, last_cover_url, last_state
+
     while True:
-        if expires_on < time.time():
-            access_token, expires_on = get_access_token(current_token)
-
         try:
+            if time.time() > expires_on - 60:
+                access_token, expires_on = get_access_token(current_token)
+                if not access_token:
+                    print(f"Failed to get a valid token for {current_token}. Retrying in 30s.")
+                    time.sleep(30)
+                    continue
+
             status = get_spotify_status(access_token)
-            retry_after = 3
-            if status and status.get("error", {}).get("status") == 429:
-                retry_after = int(status.get("error", {}).get("retry_after", 3))
-                if retry_after < 3:
-                    retry_after = 3
-                if retry_after > 1000:
-                    print("We are being rate limited for too long, using fallback")
-                    if current_token == "main":
-                        current_token = "fallback"
-                    else:
-                        current_token = "main"
-                    access_token, expires_on = get_access_token(current_token)
-                    continue
 
-                print(f"We are being rate limited, retrying after {retry_after} seconds")
-
-            if status is None or "error" in status or status["item"] is None:
-                data = f"""
-                <div class="overwrite-div"></div>
-                <style>
-                    .notification-content {{
-                        display: none;
-                    }}
-                    .not-playing {{
-                        display: flex;
-                    }}
-                </style>
-                """
-                event_writer(data)
-                last_event = data
-                time.sleep(retry_after)
+            if not status or not status.get("item"):
+                if last_state is not None:
+                    not_playing_css = build_not_playing_css()
+                    event_writer(not_playing_css)
+                    last_state = None
+                    current_lyrics = None
+                time.sleep(5)  # poll less frequently when idle
                 continue
 
-            song_title = status["item"]["name"]
-            track_id = status["item"]["id"]
-            if track_id != last_track_id:
-                current_lyrics = None
-            artist = ", ".join([artist["name"] for artist in status["item"]["artists"]])
-            # get the first image that is at least 100x100
-            covers = status["item"]["album"]["images"]
-            cover = covers[0]["url"]  # default to the first image
-            for cover_ in covers:
-                if cover_["height"] >= 100 and cover_["width"] >= 100:
-                    cover = cover_["url"]
+            current_state = SpotifyState(
+                track_id=status["item"]["id"],
+                song_title=status["item"]["name"],
+                artist=", ".join(artist["name"] for artist in status["item"]["artists"]),
+                cover_url=status["item"]["album"]["images"][0]["url"],
+                duration_ms=status["item"]["duration_ms"],
+                progress_ms=status.get("progress_ms", 0),
+                is_playing=status["is_playing"],
+                song_url=status["item"]["external_urls"]["spotify"],
+                polled_at=time.time()
+            )
 
-            if cover != last_cover:
-                try:
-                    cover_bytes = requests.get(cover).content
-                    last_cover = cover
-                except requests.exceptions.RequestException:
-                    cover_bytes = None
+            # song has changed
+            if current_state != last_state:
+                current_lyrics = None  # Reset lyrics for new song
 
-            progress_float = status["progress_ms"] / 1000
-            progress = int(progress_float)
-            duration_float = status["item"]["duration_ms"] / 1000
-            duration = int(duration_float)
-            song_url = status["item"]["external_urls"]["spotify"]
-            is_playing = status["is_playing"]
-            delta = duration - progress
-            duration_str = f"{duration // 60}:{duration % 60:02d}"
+                # update cover bytes if urt changed
+                if current_state.cover_url != last_cover_url:
+                    try:
+                        cover_bytes = requests.get(current_state.cover_url).content
+                        last_cover_url = current_state.cover_url
+                    except requests.RequestException:
+                        cover_bytes = None
 
-            state = (song_title, artist, cover, duration, is_playing)
-            if state == last_state and 0 <= progress - last_push <= 5:
-                if not is_playing:
-                    time.sleep(1.5)
-                    continue
-                time.sleep(0.5)
-                continue
-            last_state = state
-            last_push = progress
+                # send a full update with static info
+                full_update_css = build_static_css(current_state)
+                event_writer(full_update_css)
 
-            song_title = css_escape(song_title)
-            artist = css_escape(artist)
+                # fetch and send lyrics as a separate update to not make the client wait
+                lyrics = fetch_lyrics(current_state.track_id)
+                if lyrics:
+                    current_lyrics = lyrics
+                    lyrics_update_css = build_lyrics_css(current_lyrics, current_state)
+                    event_writer(lyrics_update_css)
+                else:
+                    # hide lyrics section if none are found
+                    event_writer("<style>.song-lyrics { display: none; }</style>")
 
-            unique_id = str(time.time()).replace(".", "")
-            seconds_keyframes = []
-            minutes_keyframes = []
-            for i in range(11):
-                tmp_i = i
-                if not is_playing:
-                    tmp_i = 0
-                if progress + tmp_i >= duration:
-                    tmp_i = duration - progress
-                seconds_keyframes.append(
-                    f"{i * 10}% {{ counter-increment: seconds{unique_id} {(progress + tmp_i) % 60}; }}")  # noqa
-                minutes_keyframes.append(
-                    f"{i * 10}% {{ counter-increment: minutes{unique_id} {(progress + tmp_i) // 60}; }}")  # noqa
-            seconds_keyframes = "\n".join(seconds_keyframes)
-            minutes_keyframes = "\n".join(minutes_keyframes)
+            last_state = current_state
+            # always send a progress update to keep things synced
+            progress_update_css = build_progress_css(current_state)
+            event_writer(progress_update_css)
 
-            data = f"""
-            <div class="overwrite-div"></div>
-            <a href="{song_url}" class="open-song" target="_blank"><div><img src="/assets/open.svg" alt="Open"></div></a>
+            time.sleep(2)  # regular poll interval
 
-            <style>
-            .notification-content {{
-                display: flex;
-            }}
-            .not-playing {{
-                display: none;
-            }}
-
-            .song-length::before {{
-                content: "{duration_str}";
-            }}
-
-            .seconds-progress::before {{
-                content: "0" counter(seconds{unique_id});
-                animation: countSeconds{unique_id} 10s steps(10) forwards;
-            }}
-            @keyframes countSeconds{unique_id} {{
-                {seconds_keyframes}
-            }}
-            .minutes-progress::before {{
-                content: "0" counter(minutes{unique_id});
-                animation: countMinutes{unique_id} 10s steps(10) forwards;
-            }}
-            @keyframes countMinutes{unique_id} {{
-                {minutes_keyframes}
-            }}
-
-            .song-title::before {{
-                content: "{song_title}";
-            }}
-            .song-artist::before {{
-                content: "{artist}";
-            }}
-            .album-cover {{
-                background-image: url(/spotify-cover.png?hash={hash(cover)});
-            }}
-            .progress-bar::before {{
-                width: {progress * 100 / duration}%;
-                animation: progress{unique_id} {delta}s forwards;
-            }}
-            """
-            if is_playing:
-                data += f"""
-                @keyframes progress{unique_id} {{
-                    to {{
-                        width: 100%;
-                    }}
-                }}
-
-                .paused {{
-                    visibility: hidden;
-                }}
-                """
-            else:
-                data += """
-                .paused {
-                    visibility: visible;
-                }
-                """
-
-            if last_track_id == track_id:
-                data += build_lyrics_css(current_lyrics, progress_float, duration_float, is_playing)
-
-            data += "</style>"
-
-            event_writer(data)
-            if last_track_id != track_id:
-                last_track_id = track_id
-                current_lyrics = update_lyrics(last_track_id)
-                new_lyrics_css = build_lyrics_css(current_lyrics, progress_float, duration_float, is_playing)
-                new_lyrics_css = "<style>" + new_lyrics_css + "</style>"
-                event_writer(new_lyrics_css)
-                last_event += new_lyrics_css
-
-            last_event = data
-        except BaseException:
+        except Exception:
             traceback.print_exc()
-            pass
-        time.sleep(1.5)
+            time.sleep(5)
 
 
 def get_cover_bytes():
     return cover_bytes
 
 
-access_token, expires_on = get_access_token("main")
-account_bearer, account_bearer_expires = None, 0
+access_token: str | None = None
+expires_on: float = 0
+account_bearer: str | None = None
+account_bearer_expires: float = 0
 current_token: Literal["main", "fallback"] = "main"
-last_event = ""
-current_lyrics: Lyrics | None = None
-cover_bytes = None
-last_cover = None
+current_lyrics: dict[float, int] | None = None
+cover_bytes: bytes | None = None
+last_cover_url: str | None = None
+last_state: SpotifyState | None = None
