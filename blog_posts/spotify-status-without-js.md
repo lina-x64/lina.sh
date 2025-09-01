@@ -7,12 +7,12 @@ Hash: spotify
 ## The challenge
 
 Typically, when you want real-time updates (like displaying the song you're listening to on Spotify), 
-you'd use JavaScript. It makes sense - JavaScript is the go-to for dynamic content. 
+you'd use JavaScript. 
 But well, my website *was* written fully without JavaScript, and I didn't want to just "throw that away" for adding a Spotify status.
-I wanted to **avoid JavaScript** completely and still keep the status updated **automatically and dynamically**.
+I wanted to avoid JavaScript completely and still keep the status updated **automatically and dynamically**.
 
-So how did I do it? Here's the trick: 
-I used server-side streaming and some clever use of CSS. No fancy JavaScript, just good old HTML and CSS (and a bit of Python magic).
+Here's the trick: 
+I used server-side streaming and some silly use of CSS. No JavaScript, just "basic" HTML and CSS (and a bit of Python in the backend).
 
 ## How it works
 The basic idea is pretty simple:  
