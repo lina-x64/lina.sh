@@ -196,6 +196,7 @@ def build_not_playing_css() -> str:
     <style>
         .notification-content { display: none; }
         .not-playing { display: flex; }
+        .open-song { display: none; }
     </style>
     """
 
@@ -204,6 +205,7 @@ def build_static_css(state: SpotifyState) -> str:
     return f"""
     <a href="{state.song_url}" class="open-song" target="_blank"><div><img src="/assets/open.svg" alt="Open"></div></a>
     <style>
+        .open-song {{ display: block; }}
         .notification-content {{ display: flex; }}
         .not-playing {{ display: none; }}
         .song-title::before {{ content: '{css_escape(state.song_title)}'; }}
