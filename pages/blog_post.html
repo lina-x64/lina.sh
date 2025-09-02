@@ -72,6 +72,21 @@
     <link rel="alternate" type="application/rss+xml" title="RSS feed" href="/blog/rss.xml">
 </head>
 <body>
+    {% if blog.vgwort %}
+        <!--
+        Hello dear inspector, this is a VG Wort tracking pixel.
+        This isn't anything scary, I don't want to track users.
+        Because of weird German copyright laws, I can get a little pay-out from the "VG Wort"
+        when an article/blog post gets more than 1500 views (from Germans) in a year.
+        This tracking has been delegated by the government to the VG Wort, data about you is only stored
+        pseudonymized. They save a hash of your IP address and set a cookie for your browser, to ensure that
+        you are only counted once. No other data is collected.
+
+        Tools like Privacy Badger or uBlock Origin can block this request.
+        -->
+        <img src="https://vg09.met.vgwort.de/na/{{ blog.vgwort }}" width="1" height="1" alt="" class="vgw-invisible">
+    {% endif %}
+
     <div class="top-buttons">
         <a href="/" class="top-button">
             <img src="/assets/home.svg" alt="Home icon" class="dark-light-img">
