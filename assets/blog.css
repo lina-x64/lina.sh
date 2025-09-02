@@ -780,3 +780,11 @@ video {
 .dark-light-img {
     user-select: none;
 }
+
+img.vgw-invisible {
+    width: 1px;
+    height: 1px;
+    position: absolute;
+    left: 0;
+    top: 0;
+}

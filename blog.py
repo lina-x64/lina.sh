@@ -29,6 +29,7 @@ class BlogPost:
             co_authors: str = None,
             language: str = "en",
             original_url: str = None,
+            vgwort: str = None
     ):
         if not title or not summary or not date or not content:
             raise ValueError("Missing required fields")
@@ -41,6 +42,7 @@ class BlogPost:
         self._content_md = content
         self.content = self._render_markdown()
         self.language = language
+        self.vgwort = vgwort
         self.original_url = original_url
         self.original: BlogPost | None = None  # to be set later
         if not original_url:

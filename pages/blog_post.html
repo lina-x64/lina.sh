@@ -145,6 +145,10 @@
                 </figure>
             {% endif %}
 
+            {% if blog.vgwort %}
+                <img src="https://vg09.met.vgwort.de/na/{{ blog.vgwort }}" width="1" height="1" alt="" class="vgw-invisible">
+            {% endif %}
+
             <article class="blog-content">
                 {{ blog.content|safe }}
             </article>

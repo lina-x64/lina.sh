@@ -478,7 +478,7 @@ def after_request(response):
     response.headers["Content-Security-Policy"] = (
         f"script-src 'none'; "
         f"style-src 'self' *.{request.host} 'unsafe-inline'; "
-        f"img-src 'self' *.{request.host} data: *.vg09.met.vgwort.de; "
+        f"img-src 'self' *.{request.host} data: *.met.vgwort.de; "
         f"default-src 'self' *.{request.host};"
     )
     response.headers["X-Content-Type-Options"] = "nosniff"

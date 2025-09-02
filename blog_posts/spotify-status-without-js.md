@@ -3,8 +3,8 @@ Summary: How I managed to keep my website JavaScript-free while still showing my
 Date: 2024-12-08
 Image: /assets/blog/spotify-status.png
 Hash: spotify
+VGWort: 522fe25be8424078bb331594a2d7b258
 ---------
-<img src="https://vg09.met.vgwort.de/na/522fe25be8424078bb331594a2d7b258" width="1" height="1" alt="">
 ## The challenge: A real-time status using CSS only
 
 Typically, when you want real-time updates on a website, like displaying the song you're currently listening to on

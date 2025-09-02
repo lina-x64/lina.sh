@@ -2,9 +2,9 @@ Title: Germany's private internet censorship organization gives up
 Summary: A group of major corporations blocked domains in Germany without courts. That ends now.
 Date: 2025-07-17
 Image: /assets/blog/cuii-tomb.png 
-Hash: cuii-dead
+Hash: cuii-dead+
+VGWort: 12a1a27d769d4645b372738544362011
 ---------
-<img src="https://vg09.met.vgwort.de/na/12a1a27d769d4645b372738544362011" width="1" height="1" alt="">
 Our internet is a little freer now, with less censorship by private companies.
 
 ## What was the CUII?
