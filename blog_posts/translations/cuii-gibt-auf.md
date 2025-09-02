@@ -6,7 +6,7 @@ Hash: cuii-tot
 Language: de
 Original url: cuii-gives-up
 ---------
-
+<img src="https://vg09.met.vgwort.de/na/a3358d4381c4498d8cef204b311a9573" width="1" height="1" alt="">
 Unser Internet ist wieder ein Stück freier geworden, mit weniger Zensur durch private Unternehmen.
 
 ## Was war die CUII?
