@@ -391,8 +391,10 @@ def get_rss(blog_posts: [BlogPost], language):
             <h2>{html.escape(post.title)}</h2>
             <p><i>{html.escape(post.summary)}</i></p>
             {f'<img src="https://lina.sh{post.image}" alt="{html.escape(post.title)}">' if post.image else ''}
-            {(f'<img src="https://vg09.met.vgwort.de/na/{ post.vgwort }" '
-              f'width="1" height="1" alt="" style="display:none;">') if post.vgwort else ''}
+            {
+                f'<img src="https://vg09.met.vgwort.de/na/{ post.vgwort }" width="1" height="1" alt="">' 
+                if post.vgwort else ''
+            }
             {post.content}
         """.replace("[", "&#91;").replace("]", "&#93;")
 
