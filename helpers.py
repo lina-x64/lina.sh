@@ -142,6 +142,7 @@ def smart_split(string, length):
 
 
 def random_copyright_year():
+    actual_year = datetime.now().year
     years = [
         "1984",
         "1970",
@@ -149,13 +150,14 @@ def random_copyright_year():
         '<?php echo date("Y"); ?>',
         "$CURRENT_YEAR",
         "datetime.now().year",
-        str(datetime.now().year + 1),
+        str(actual_year + 1),
         "NULL",
         "NaN",
         "π",
         "random.randint(1900, 2100)",
-        hex(datetime.now().year),
-        "curl https://getfullyear.com/api/year"
+        hex(actual_year),
+        "curl https://getfullyear.com/api/year",
+        "MMXX" + ["", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX"][actual_year % 10]
     ]
     return random.choice(years)
 
