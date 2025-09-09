@@ -3,6 +3,7 @@ Summary: How DoubleCounter brutally violates the privacy rights of over 40 milli
 Date: 2025-05-11
 Image: /assets/blog/doxing-users.png
 Hash: dcounter
+VGWort: e3cc0666aa8944079e50fbd468219fb2
 ---------
 <div class="subtext">This is a satirical modification of the DoubleCounter logo. Original logo owned by Tellter SAS.</div>  
 
@@ -114,7 +115,7 @@ tie data to *you*. This is absurd:
 - The links themselves are non-public personal data, as they reveal associations only DoubleCounter has created and
   stored.
 
-By linking IDs, DoubleCounter processes personal data - full stop. GDPR compliance requires lawful justification (for example
+By linking IDs, DoubleCounter processes personal data. GDPR compliance requires lawful justification (for example
 consent or legitimate interest, we'll come to that in a second!) for this practice.
 
 ![](/assets/blog/attached-id.png)
@@ -391,7 +392,6 @@ This research took quite some time and effort. I spent way over two weeks on thi
 
 * [Crimsongale](https://crimsongale.com/)
 
-* [lina](/)
 
 
 
