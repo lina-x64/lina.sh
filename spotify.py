@@ -265,14 +265,12 @@ def build_progress_css(state: SpotifyState) -> str:
         @keyframes countMinutes{unique_id} {{ {" ".join(minutes_keyframes)} }}
 
         .paused {{ visibility: {"hidden" if state.is_playing else "visible"}; }}
+        .song-lyrics {{ display: {"block" if state.is_playing else "none"}; }}
     </style>
     """
 
 
 def build_lyrics_css(lyrics: dict[float, int], state: SpotifyState) -> str:
-    if not lyrics or not state.is_playing:
-        return "<style>.song-lyrics { display: none; }</style>"
-
     progress_s = state.progress_ms / 1000 + (time.time() - state.polled_at)
     duration_s = state.duration_ms / 1000
     unique_id = str(time.time()).replace(".", "")
