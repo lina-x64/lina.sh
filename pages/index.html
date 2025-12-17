@@ -67,28 +67,59 @@
                         root@<span class="servername">lina.sh</span><span class="shortServername">lina</span>
                     </span>:~<span style="color: #747f8d;">$ </span>
                 </span>
-                <span class="command">cat about_me.txt</span>
-                <div class="content-wrapper">
-                    <img src="/assets/lina_shade_transparent_smoller.png" alt="my profile picture" class="about-image-separate" width="1024" height="1024">
-                    <div class="text-content">
-                        <input type="checkbox" id="showImage" style="display: none;" autocomplete="off">
-                        <div class="about-image-inline">
-                            <div class="about-image-topbar">
-                                <span>pfp by <a href="https://ivymoths.carrd.co/" target="_blank">ari</a></span>
-                                <label for="showImage" class="close"></label>
+                <span class="command">glow about_me.md</span>
+
+                <div class="content-wrapper about-layout">
+                    <div class="tui-window">
+                        <div class="tui-fieldset-label">about_me.md</div>
+
+                        <div class="tui-master-grid">
+                            <img src="/assets/lina_shade_transparent_smoller.png" alt="Lina" class="tui-pfp">
+
+                            <div class="tui-info-text">
+                                <div class="info-name">Lina</div>
+                                <div>
+                                    {{age}}-<span class="long-text">year-old developer who breaks things</span><span class="short-text">y/o dev</span>
+                                </div>
+                                <div>leipzig
+                                    <span style="color:#747f8d" class="long-text">(you can often find me in the dezentrale!)</span>
+                                    <span style="color:#747f8d" class="short-text">(@ dezentrale)</span>
+                                </div>
                             </div>
-                            <img src="/assets/lina_shade_transparent_smoller.png" alt="my profile picture" width="1024" height="1024">
+
+                            <div class="tui-separator">
+                                <div class="tui-separator-label">## projects</div>
+                            </div>
+
+                            <div class="tui-label"><a href="https://cuiiliste.de/" style="color: inherit; text-decoration: none; border-bottom: 1px dotted;">CUII-liste</a></div>
+
+                            <div class="tui-desc">
+                                We exposed how companies and ISPs cooperate in Germany to secretly block websites, and messed with them!
+                                <div class="press-badges">
+                                    <span style="color: #747f8d; font-size: 0.85em; margin-right: 5px;">read more:</span>
+                                    <a href="/blog/exposing-the-cuii">my blog</a>
+                                    <a href="https://torrentfreak.com/17-year-old-student-exposes-germanys-secret-pirate-site-blocklist-240822/" target="_blank">TorrentFreak</a>
+                                    <a href="https://heise.de/-9847202" target="_blank">Heise (de)</a>
+                                    <a href="https://netzpolitik.org/2024/cuii-liste-diese-websites-sperren-provider-freiwillig/" target="_blank">netzpolitik.org (de)</a>
+                                </div>
+                            </div>
+
+
+
+                            <div class="tui-label"><a href="https://freearpa.lina.sh/" style="color: inherit; text-decoration: none; border-bottom: 1px dotted;">freearpa</a></div>
+                            <div class="tui-desc">
+                                get your own ip6.arpa domain :P
+                            </div>
+
+                            <div class="tui-separator">
+                                <div class="tui-separator-label">## silly stuff</div>
+                            </div>
+
+                            <div style="grid-column: 1 / -1;">
+                                fun fact: this entire website is written without any javascript, even the live spotify status! read
+                                <a href="/blog/spotify-status-without-js">my blog post</a> about it :3
+                            </div>
                         </div>
-                        Hi! I'm Lina, a {{age}}-year-old developer from Germany!<br>
-                        You might know me from <a href="https://cuiiliste.de/">CUII-Liste</a>, a project that publishes a secret list of domains blocked by
-                        German ISPs and <b>exposed</b> wrongful blocking of domains.<br>
-                        If you're curious to find out more, there's English articles from <b>TorrentFreak</b> (<a href="https://torrentfreak.com/17-year-old-student-exposes-germanys-secret-pirate-site-blocklist-240822/">1</a>)(<a href="https://torrentfreak.com/homebrew-transparency-portal-reveals-needlessly-blocked-pirate-sites-240928/">2</a>),
-                        or German ones from <b>Heise</b> (<a href="https://heise.de/-9847202">1</a> [<a href="https://heise.de/-9847399">en</a>])(<a href="https://heise.de/-9959663">2</a> [<a href="https://heise.de/-9960346">en</a>]) and
-                        <b>Netzpolitik</b> (<a href="https://netzpolitik.org/2024/cuii-liste-diese-websites-sperren-provider-freiwillig/">1</a>)(<a href="https://netzpolitik.org/2024/cuii-viele-netzsperren-wirken-laenger-als-erlaubt/">2</a>)(<a href="https://netzpolitik.org/2024/cuii-liste-internetprovider-heben-39-netzsperren-auf/">3</a>).
-                        There's more articles from Golem, Tarnkappe.info, winfuture and others, but I can't list them all here. I also worked on some Minecraft related projects in the past!<br>
-                        I <b>love</b> programming in Python, Java, JavaScript and Rust.<br>
-                        (Ok, that JavaScript part was a lie, this website is made entirely without JS.<span id="that_one_linebreak"><br></span>
-                        &nbsp;And yes, my discord and <a href="/blog/spotify-status-without-js">spotify status</a> <i>do</i> update dynamically <b>without</b> JS)<br>
                     </div>
                 </div>
             </section>
