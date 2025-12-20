@@ -173,7 +173,8 @@ def get_mastodon_oauth_url(instance, return_url):
         # Default discovery endpoints
         authorization_url = f"https://{instance}/oauth/authorize"
         token_url = f"https://{instance}/oauth/token"
-        scope = "read:accounts profile"
+
+        scope = "read:accounts"
 
         # try to discover endpoints via .well-known
         try:
@@ -181,10 +182,11 @@ def get_mastodon_oauth_url(instance, return_url):
             if req.status_code == 200:
                 data = req.json()
                 allowed_scopes = data.get("scopes_supported", [])
+
+                # if profile is supported, use it for privacy purposes
                 if "profile" in allowed_scopes:
                     scope = "profile"
-                if "read:accounts" in allowed_scopes:
-                    scope = "read:accounts"
+
                 authorization_url = data.get("authorization_endpoint", authorization_url)
                 token_url = data.get("token_endpoint", token_url)
         except requests.RequestException:
@@ -209,7 +211,8 @@ def get_mastodon_oauth_url(instance, return_url):
             "cid": client_id,
             "csec": client_secret,
             "t_url": token_url,
-            "r_uri": redirect_url
+            "r_uri": redirect_url,
+            "scp": scope
         }
 
         state_token = jwt.encode(state_payload, const.JWT_SECRET, algorithm="HS256")
@@ -229,7 +232,7 @@ def get_mastodon_oauth_url(instance, return_url):
                 ("&return=" + urllib.parse.quote(return_url) if return_url else ""))
 
 
-def get_mastodon_access_token(code, client_id, client_secret, token_url, redirect_uri):
+def get_mastodon_access_token(code, client_id, client_secret, token_url, redirect_uri, scope):
     try:
         data = requests.post(
             token_url,
@@ -239,6 +242,7 @@ def get_mastodon_access_token(code, client_id, client_secret, token_url, redirec
                 "redirect_uri": redirect_uri,
                 "client_id": client_id,
                 "client_secret": client_secret,
+                "scope": scope,
             },
             timeout=5
         )
@@ -278,10 +282,11 @@ def handle_mastodon_callback(instance):
         token_url = state_data.get("t_url")
         redirect_uri = state_data.get("r_uri")
         return_url = state_data.get("ret")
+        scope = state_data.get("scp")
     except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
         return "Invalid state token. Please try logging in again.", 400
 
-    token = get_mastodon_access_token(code, client_id, client_secret, token_url, redirect_uri)
+    token = get_mastodon_access_token(code, client_id, client_secret, token_url, redirect_uri, scope)
 
     if token is None:
         return "Invalid code or exchange failed", 400
