@@ -8,7 +8,7 @@ Hash: almanar
 ## Al-Manar TV blocked by German ISPs
 Before net-neutrality was a thing, and ISPs just did whatever they wanted to do, there *were* a few blocks, similar to 
 that, in the past (we are talking about the 2000s here). 
-But for the first time in modern history, the biggest ISPs in Germany (Telekom, Vodafone, 1&1, ...) 
+But now, the biggest ISPs in Germany (Telekom, Vodafone, 1&1, ...) 
 have been forced to block websites not related to child protection or EU sanctions. 
 The Lebanese terror group Hezbollah runs the channel "*Al-Manar TV*", which also has a website, where they
 had been spreading hate speech and terrorist propaganda.  
@@ -21,11 +21,11 @@ We were able to find two domains affected under these blocks. The ISPs now won't
 
 Until now, German internet blocks have only targeted websites violating child protection laws 
 (like porn sites without proper age verification), or sites affected by EU sanctions against Russia. 
-However, those previous blocking attempts were largely ineffective, 
+However, those previous blocks are largely ineffective, 
 with operators quickly bypassing them using new domains[^1].
 
 ## Opinion
-While blocking terrorist propaganda like Al-Manar may seem like a good step to keep harmful content off the internet, 
+While blocking terrorist propaganda like Al-Manar *may* seem like a good step to keep harmful content off the internet, 
 I'm concerned about where this might lead.
 We can all agree this content is harmful, but this can lead to drastic consequences. 
 Blocking "unconstitutional" content could lead to more censorship in the future, 
