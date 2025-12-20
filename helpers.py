@@ -1,7 +1,10 @@
+import hashlib
+import hmac
 import json
 import random
 import re
 import time
+import urllib.parse
 from datetime import datetime
 from functools import lru_cache
 
@@ -161,3 +164,46 @@ def random_copyright_year():
     ]
     return random.choice(years)
 
+
+def generate_proxy_url(remote_url):
+    if not remote_url:
+        return "/assets/mastodon.png"
+
+    signature = hmac.new(
+        const.JWT_SECRET.encode('utf-8'),
+        remote_url.encode('utf-8'),
+        hashlib.sha256
+    ).hexdigest()
+
+    encoded_url = urllib.parse.quote(remote_url)
+    return f"/mastodon/profile_image?url={encoded_url}&sig={signature}"
+
+
+@lru_cache(maxsize=100)
+def fetch_remote_image(url_arg):
+    try:
+        if not url_arg.startswith("http://") and not url_arg.startswith("https://"):
+            return None, None
+
+        with requests.get(url_arg, timeout=5, stream=True) as req:
+            req.raise_for_status()
+
+            # check Content-Type
+            content_type = req.headers.get("Content-Type", "")
+            if not content_type.startswith("image/"):
+                return None, None
+
+            content_length = req.headers.get("Content-Length")
+            if content_length and int(content_length) > 10 * 1024 * 1024:
+                return None, None
+
+            content = bytearray()
+            for chunk in req.iter_content(chunk_size=8192):
+                content.extend(chunk)
+                if len(content) > 10 * 1024 * 1024:
+                    return None, None
+
+            return bytes(content), content_type
+
+    except Exception as e:
+        return None, None

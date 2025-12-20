@@ -24,7 +24,7 @@
                 {% elif comment.platform == "mastodon" %}
                     <a href="{{ comment.profile_url }}" target="_blank" class="comment-avatar">
                         {% if comment.profile_picture %}
-                            <img src="/mastodon/profile_image?url={{ comment.profile_picture|urlencode }}" alt="Profile picture" height="50" width="50">
+                            <img src="{{ generate_proxy_url(comment.profile_picture) }}" alt="Profile picture" height="50" width="50">
                         {% else %}
                             <img src="/assets/mastodon.png" alt="Default profile picture" height="50" width="50">
                         {% endif %}

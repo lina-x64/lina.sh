@@ -1,4 +1,6 @@
 import datetime
+import hashlib
+import hmac
 import json
 import os
 import urllib.parse
@@ -22,7 +24,7 @@ import robots
 from blog import get_blog_posts
 from dino import dino_game
 from helpers import get_discord_status, get_age, show_notification, \
-    format_iso_date, fishlogic, random_copyright_year, get_server_status
+    format_iso_date, fishlogic, random_copyright_year, get_server_status, fetch_remote_image, generate_proxy_url
 from spotify import spotify_status_updater, event_reader, get_cover_bytes
 
 app = Flask(__name__, template_folder='pages')
@@ -114,7 +116,8 @@ def blog_post(url_name=None):
             date_text=date_text,
             user_data=user_data,
             copyright=random_copyright_year(),
-            style_hash=blog_style_hash
+            style_hash=blog_style_hash,
+            generate_proxy_url=generate_proxy_url
         )
     )
     if (blog_.original_url or blog_.url_name) == blogs.get_by_language("en")[0].url_name:
@@ -290,20 +293,33 @@ def instance_not_found():
 
 
 @app.route('/mastodon/profile_image')
-@lru_cache(maxsize=30)
 @robots.noindex
 @robots.disallow
 def mastodon_profile_image():
-    # Remove the protocol from the URL
-    try:
-        image_url = request.args.get("url")
-        image_url = image_url.removeprefix("https://").removeprefix("http://")
-        req = requests.get(f"https://{image_url}")
-        req.raise_for_status()
-        resp = make_response(req.content)
-        resp.headers["Content-Type"] = req.headers.get("Content-Type", "image/png")
-    except requests.RequestException:
+    image_url_param = request.args.get("url")
+    signature_param = request.args.get("sig")
+
+    if not image_url_param or not signature_param:
+        return make_response(send_from_directory("assets", "mastodon.png"))
+
+    expected_sig = hmac.new(
+        const.JWT_SECRET.encode('utf-8'),
+        image_url_param.encode('utf-8'),
+        hashlib.sha256
+    ).hexdigest()
+    if not hmac.compare_digest(expected_sig, signature_param):
+        return "Invalid Signature", 403
+    target_url = image_url_param
+
+    image_data, content_type = fetch_remote_image(target_url)
+
+    if image_data is None:
         resp = make_response(send_from_directory("assets", "mastodon.png"))
+        resp.headers["Cache-Control"] = "no-cache"
+        return resp
+
+    resp = make_response(image_data)
+    resp.headers["Content-Type"] = content_type or "image/png"
     resp.headers["Cache-Control"] = f"public, max-age={60 * 60 * 24}"
     return resp
 

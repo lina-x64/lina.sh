@@ -14,7 +14,6 @@ import const
 
 def get_gh_oauth_url(return_url=None):
     redirect_url = const.URL_BASE + "/github/callback"
-    # redirect_url = "https://localpc.damcraft.de/github/callback"
     if return_url is not None:
         redirect_url += "?return=" + urllib.parse.quote(return_url)
 
@@ -86,7 +85,6 @@ def handle_gh_callback():
 
 def get_discord_oauth_url(return_url=None):
     redirect_url = const.URL_BASE + "/discord/callback"
-    # redirect_url = "https://localpc.damcraft.de/discord/callback"
     state = ""
     if return_url is not None:
         state = base64.b64encode(return_url.encode()).decode()
@@ -107,7 +105,6 @@ def get_discord_access_token(code):
             "grant_type": "authorization_code",
             "code": code,
             "redirect_uri": const.URL_BASE + "/discord/callback",
-            # "redirect_uri": "https://localpc.damcraft.de/discord/callback"
         },
         auth=(const.DISCORD_CLIENT_ID, const.DISCORD_CLIENT_SECRET),
         headers={"Content-Type": "application/x-www-form-urlencoded"},
@@ -171,69 +168,82 @@ def get_mastodon_oauth_url(instance, return_url):
             instance
         ), "Invalid domain"
 
-        if instance not in mastodon_application_cache:
-            authorization_url = f"https://{instance}/oauth/authorize"
-            token_url = f"https://{instance}/oauth/token"
-            scope = "read:accounts profile"
-            try:
-                req = requests.get(f"https://{instance}/.well-known/oauth-authorization-server", timeout=3)
-                if req.status_code == 200:
-                    data = req.json()
-                    allowed_scopes = data.get("scopes_supported", [])
-                    if "profile" in allowed_scopes:
-                        scope = "profile"
-                    if "read:accounts" in allowed_scopes:
-                        scope = "read:accounts"
-                    authorization_url = data.get("authorization_endpoint", authorization_url)
-                    token_url = data.get("token_endpoint", token_url)
-
-            except requests.RequestException:
-                pass
-            req = requests.post(
-                f"https://{instance}/api/v1/apps",
-                data={
-                    "client_name": "lina's blog",
-                    "redirect_uris": const.URL_BASE + "/mastodon/callback/" + instance,
-                    # "redirect_uris": "https://localpc.damcraft.de/mastodon/callback/" + instance,
-                    "scopes": scope
-                },
-            ).json()
-            client_id, client_secret = req["client_id"], req["client_secret"]
-            mastodon_application_cache[instance] = (client_id, client_secret, authorization_url, token_url, scope)
-        client_id, client_secret, authorization_url, token_url, scope = mastodon_application_cache[instance]
         redirect_url = const.URL_BASE + "/mastodon/callback/" + instance
-        # redirect_url = "https://localpc.damcraft.de/mastodon/callback/" + instance
-        state = ""
-        if return_url is not None:
-            state = base64.b64encode(return_url.encode()).decode()
+
+        # Default discovery endpoints
+        authorization_url = f"https://{instance}/oauth/authorize"
+        token_url = f"https://{instance}/oauth/token"
+        scope = "read:accounts profile"
+
+        # try to discover endpoints via .well-known
+        try:
+            req = requests.get(f"https://{instance}/.well-known/oauth-authorization-server", timeout=3)
+            if req.status_code == 200:
+                data = req.json()
+                allowed_scopes = data.get("scopes_supported", [])
+                if "profile" in allowed_scopes:
+                    scope = "profile"
+                if "read:accounts" in allowed_scopes:
+                    scope = "read:accounts"
+                authorization_url = data.get("authorization_endpoint", authorization_url)
+                token_url = data.get("token_endpoint", token_url)
+        except requests.RequestException:
+            pass
+
+        req = requests.post(
+            f"https://{instance}/api/v1/apps",
+            data={
+                "client_name": "lina's blog",
+                "redirect_uris": redirect_url,
+                "scopes": scope,
+                "website": const.URL_BASE
+            },
+            timeout=5
+        ).json()
+
+        client_id = req["client_id"]
+        client_secret = req["client_secret"]
+
+        state_payload = {
+            "ret": return_url,
+            "cid": client_id,
+            "csec": client_secret,
+            "t_url": token_url,
+            "r_uri": redirect_url
+        }
+
+        state_token = jwt.encode(state_payload, const.JWT_SECRET, algorithm="HS256")
+
         base_url = (
             f"{authorization_url}?response_type=code"
-            "&client_id=" + client_id +
-            "&redirect_uri=" + urllib.parse.quote(redirect_url) +
-            "&scope=" + scope +
-            ("&state=" + state if state else "")
+            f"&client_id={client_id}"
+            f"&redirect_uri={urllib.parse.quote(redirect_url)}"
+            f"&scope={scope}"
+            f"&state={state_token}"
         )
         return base_url
-    except (requests.RequestException, KeyError, AssertionError):
+
+    except (requests.RequestException, KeyError, AssertionError) as e:
+        print(f"Mastodon Error: {e}")
         return ("/mastodon/instance_not_found?instance=" + urllib.parse.quote(instance) +
                 ("&return=" + urllib.parse.quote(return_url) if return_url else ""))
 
 
-def get_mastodon_access_token(instance, code):
+def get_mastodon_access_token(code, client_id, client_secret, token_url, redirect_uri):
     try:
-        client_id, client_secret, authorization_url, token_url, scope = mastodon_application_cache[instance]
         data = requests.post(
             token_url,
             data={
                 "grant_type": "authorization_code",
                 "code": code,
-                "redirect_uri": const.URL_BASE + "/mastodon/callback/" + instance,
-                # "redirect_uri": "https://localpc.damcraft.de/mastodon/callback/" + instance,
+                "redirect_uri": redirect_uri,
                 "client_id": client_id,
                 "client_secret": client_secret,
-            }
+            },
+            timeout=5
         )
         if data.status_code != 200:
+            print(f"Mastodon Token Error: {data.text}")
             return None
         return data.json().get("access_token")
     except (requests.RequestException, KeyError):
@@ -245,6 +255,7 @@ def get_mastodon_user_data(instance, token):
         data = requests.get(
             f"https://{instance}/api/v1/accounts/verify_credentials",
             headers={"Authorization": "Bearer " + token},
+            timeout=5
         )
         if data.status_code != 200:
             return None
@@ -255,24 +266,42 @@ def get_mastodon_user_data(instance, token):
 
 def handle_mastodon_callback(instance):
     code = request.args.get("code")
-    if code is None:
-        return "No code provided", 400
-    token = get_mastodon_access_token(instance, code)
+    state_token = request.args.get("state")
+
+    if code is None or state_token is None:
+        return "No code or state provided", 400
+
+    try:
+        state_data = jwt.decode(state_token, const.JWT_SECRET, algorithms=["HS256"])
+        client_id = state_data.get("cid")
+        client_secret = state_data.get("csec")
+        token_url = state_data.get("t_url")
+        redirect_uri = state_data.get("r_uri")
+        return_url = state_data.get("ret")
+    except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
+        return "Invalid state token. Please try logging in again.", 400
+
+    token = get_mastodon_access_token(code, client_id, client_secret, token_url, redirect_uri)
+
     if token is None:
         return "Invalid code or exchange failed", 400
+
     user_data = get_mastodon_user_data(instance, token)
     if user_data is None:
         return "Failed to get user data", 500
+
     user_name = user_data.get("username")
-    account = "@" + user_data.get("acct") + "@" + instance
+    acct = user_data.get("acct", "")
+    account = f"@{acct}@{instance}"
+
     url = user_data.get("url")
-    if user_name is None or account is None:
+    if user_name is None or not acct:
         return "Incomplete user data", 500
+
     if url is None or not url.startswith("https://"):
-        url = "https://" + instance + "/@" + user_name
-    profile_picture = user_data.get("avatar")
-    if not profile_picture:
-        profile_picture = "/assets/mastodon.png"
+        url = f"https://{instance}/@{user_name}"
+    profile_picture = user_data.get("avatar", "/assets/mastodon.png")
+    print(profile_picture)
 
     signed_jwt = jwt.encode(
         {
@@ -287,10 +316,11 @@ def handle_mastodon_callback(instance):
         const.JWT_SECRET,
         algorithm="HS256"
     )
-    redirect_path = request.args.get("state")
-    redirect_path = base64.b64decode(urllib.parse.unquote(redirect_path)).decode() if redirect_path else None
+
+    redirect_path = return_url
     if not redirect_path or not redirect_path.startswith("/"):
         redirect_path = "/"
+
     resp = redirect(redirect_path)
     resp.set_cookie("account_jwt", signed_jwt, max_age=60 * 60 * 24 * 7, httponly=True, secure=True, samesite="Lax")
     return resp
@@ -298,7 +328,6 @@ def handle_mastodon_callback(instance):
 
 def get_reddit_oauth_url(return_url=None):
     redirect_url = const.URL_BASE + "/reddit/callback"
-    # redirect_url = "https://localpc.damcraft.de/reddit/callback"
     state = ""
     if return_url is not None:
         state = base64.b64encode(return_url.encode()).decode()
@@ -320,7 +349,6 @@ def get_reddit_access_token(code):
             "grant_type": "authorization_code",
             "code": code,
             "redirect_uri": const.URL_BASE + "/reddit/callback",
-            # "redirect_uri": "https://localpc.damcraft.de/reddit/callback"
         },
         auth=(const.REDDIT_CLIENT_ID, const.REDDIT_CLIENT_SECRET),
         headers={"User-Agent": "lina's blog"},
@@ -394,20 +422,16 @@ def get_user_data_from_request(request_):
         return None
     try:
         data = jwt.decode(jwt_cookie, const.JWT_SECRET, algorithms=["HS256"])
-        return UserData(data["user_id"], data["user_name"], data["platform"], data.get("profile_picture"), data.get("profile_url"))
-    except jwt.ExpiredSignatureError:
-        return None
-    except jwt.InvalidTokenError:
+        return UserData(data["user_id"], data["user_name"], data["platform"], data.get("profile_picture"),
+                        data.get("profile_url"))
+    except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
         return None
 
 
 @dataclass
 class UserData:
-    user_id: int
+    user_id: str
     user_name: str
     platform: str
     profile_picture: str | None = None
     profile_url: str | None = None
-
-
-mastodon_application_cache = {}
