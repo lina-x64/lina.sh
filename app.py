@@ -428,9 +428,18 @@ def discord_icon():
 @cors.allow_origin("*")
 def security_txt(filename):
     request_host = request.headers.get("Host", "").lower()
+    base_dir = os.path.abspath("well-known")
+    target_dir = os.path.abspath(os.path.join(base_dir, request_host))
+    try:
+        if os.path.commonpath([base_dir, target_dir]) != base_dir:
+            return "Invalid Host header", 403
+    except ValueError:
+        return "Invalid Host header", 403
+
     # check if there is well-known/{host}/{filename}, else return the default well-known/default/{filename}
-    if os.path.exists(os.path.join("well-known", request_host, filename)):
-        return send_from_directory(os.path.join("well-known", request_host), filename)
+    if os.path.exists(os.path.join(target_dir, filename)):
+        return send_from_directory(target_dir, filename)
+
     return send_from_directory(os.path.join("well-known", "default"), filename)
 
 
