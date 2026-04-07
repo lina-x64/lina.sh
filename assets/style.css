@@ -952,7 +952,8 @@ section {
 
 .discordInv {
     margin: 5px 0 10px 0;
-    max-width: 350px;
+    max-width: 100%;
+    width: max-content;
 }
 
 

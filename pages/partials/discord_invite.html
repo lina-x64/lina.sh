@@ -119,6 +119,17 @@
         }
     }
 
+    .matrix-bridge {
+        margin-top: 2px;
+        margin-left: 12px;
+        font-size: 14px;
+        color: #747f8d;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        line-height: 1;
+    }
+
 </style>
 
 <div class="discord-invite-widget">
@@ -142,4 +153,7 @@
             <a href="{{ discord_invite_url | default('#') }}" class="discord-invite-join-button" target="_blank" rel="noopener">Join</a>
         </div>
     </div>
+</div>
+<div class="matrix-bridge">
+    ╰─ [m] <span>bridged to <a href="https://matrix.to/#/#space:lina.sh" target="_blank" rel="noopener">#space:lina.sh</a></span>
 </div>
