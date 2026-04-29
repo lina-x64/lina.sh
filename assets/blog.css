@@ -12,6 +12,7 @@ html {
     --comment-background: #111;
     --reply-background: #222;
     --comment-input: #222;
+    --highlight-color: #ae4f00;
 }
 
 @media (prefers-color-scheme: light) {
@@ -378,6 +379,13 @@ blockquote > blockquote {
     color: var(--secondary-text);
     line-height: 1.2;
     margin: 0 0 6px 0;
+}
+
+code {
+    background-color: #202020;
+    color: var(--highlight-color);
+    padding: 2px 4px;
+    border-radius: 4px;
 }
 
 pre {
