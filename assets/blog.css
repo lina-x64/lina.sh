@@ -382,7 +382,7 @@ blockquote > blockquote {
 }
 
 code {
-    background-color: #202020;
+    background-color: var(--reply-background);
     color: var(--highlight-color);
     padding: 2px 4px;
     border-radius: 4px;
