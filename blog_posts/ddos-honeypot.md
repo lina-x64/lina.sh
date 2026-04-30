@@ -1,4 +1,4 @@
-Title: I accidentally made law enforcement shut down their fake honeypot
+Title: I accidentally made law enforcement shut down their stresser honeypot
 Summary: How I stumbled across a fake booter site run by international police, and how they panicked when I started digging
 Date: 2026-04-29
 Image: /assets/blog/cyberzap-pricing.png
