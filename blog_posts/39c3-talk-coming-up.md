@@ -12,8 +12,14 @@ Check it out here in the [hub](https://events.ccc.de/congress/2025/hub/en/event/
 The talk itself is in German, but it will be translated (I guess?)
 
 The talk will be about the CUII (which we already covered here multiple times: [1](/blog/exposing-the-cuii), [2](/blog/telefonica-sabotages-me) and [3](/blog/cuii-gives-up))  
-There is some new information though in this talk and some new stuff that came up! So definitely come check it out if you're interested c:
+We will be presenting some new information though! So definitely come check it out if you're interested c:
 
+
+# Update
+
+The talk is available on 
+[media.ccc.de](https://media.ccc.de/v/39c3-cuii-wie-konzerne-heimlich-webseiten-in-deutschland-sperren/) with German 
+and translated English audio. Alternatively, it's also [watchable on Youtube](https://www.youtube.com/watch?v=Uxmu25mUZgg).
 
 
 <style>
