@@ -44,7 +44,7 @@ def get_server_status():
             "online": resp.get("profile", {}).get("online_count", 0),
         }
     except (requests.exceptions.RequestException, json.JSONDecodeError, KeyError):
-        return None
+        return {}
 
 
 def get_age():
