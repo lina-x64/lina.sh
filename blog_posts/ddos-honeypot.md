@@ -3,6 +3,7 @@ Summary: How I stumbled across a fake booter site run by international police, a
 Date: 2026-04-29
 Image: /assets/blog/cyberzap-pricing.png
 Hash: ddos
+VGWort: d82fe1baeacd4e908dab818b86720ccf
 ---------
 
 ## What is Operation PowerOFF?
