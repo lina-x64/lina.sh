@@ -381,7 +381,7 @@ blockquote > blockquote {
     margin: 0 0 6px 0;
 }
 
-code {
+code:not(pre *)  {
     background-color: var(--reply-background);
     color: var(--highlight-color);
     padding: 2px 4px;
