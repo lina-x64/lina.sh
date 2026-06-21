@@ -9,7 +9,8 @@
             'welcome': "welcome to my blog! this is my little place to ramble and rant on the internet",
             'footer_back': "Back to my website",
             'back_short': "back home",
-            'rss_feed': "RSS feed"
+            'rss_feed': "RSS feed",
+            'imprint': "imprint"
         },
         'de': {
             'title': "Blog-Übersicht - lina's blog",
@@ -17,7 +18,8 @@
             'welcome': "willkommen in meinem blog! das ist meine kleine plauderecke im internet",
             'footer_back': "Zurück zur Website",
             'back_short': "zurück zur website",
-            'rss_feed': "RSS-Feed (deutsch und englisch)"
+            'rss_feed': "RSS-Feed (deutsch und englisch)",
+            'imprint': "impressum"
         }
     } %}
     {% set t = translations[lang] if lang in translations else translations['en'] %}
@@ -108,7 +110,7 @@
             <div class="footer-links">
                 <a href="/">← {{ t.footer_back }}</a> <a href="/blog/rss.xml?lang={{ lang or "en" }}">{{ t.rss_feed }}</a>
             </div>
-            <p class="footer-text">&copy; {{ copyright }} lina</p>
+            <p class="footer-text">&copy; {{ copyright }} lina<a href="/impressum" class="footer-imprint">{{ t.imprint }}</a></p>
         </footer>
     </div>
 </body>

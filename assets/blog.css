@@ -255,6 +255,14 @@ footer {
 .footer-text {
     font-size: 14px;
     text-align: center;
+    position: relative;
+}
+
+.footer-imprint {
+    position: absolute;
+    right: 0;
+    padding-right: 10px;
+    font-size: 1rem;
 }
 
 /* Top buttons */

@@ -10,6 +10,7 @@
             'footer_back': "Back to blog list",
             'rss_feed': "RSS feed",
             'available_languages': "Also available in the following languages:",
+            'imprint': "imprint",
         },
         'de': {
             'back_home': "zurück zur website",
@@ -21,6 +22,7 @@
             'footer_back': "Zurück zur Übersicht",
             'rss_feed': "RSS-Feed (deutsch und englisch)",
             'available_languages': "Auch verfügbar in den folgenden Sprachen:",
+            'imprint': "impressum",
         }
     } %}
     {% set t = translations[blog.language] if blog.language in translations else translations['en'] %}
@@ -178,7 +180,7 @@
             <div class="footer-links">
                 <a href="/blogs/">← {{ t.footer_back }}</a> <a href="/blog/rss.xml?lang={{ blog.language }}">{{ t.rss_feed }}</a>
             </div>
-            <p class="footer-text">&copy; {{ copyright }} lina</p>
+            <p class="footer-text">&copy; {{ copyright }} lina<a href="/imprint" class="footer-imprint">{{ t.imprint }}</a></p>
         </footer>
     </div>
 </body>

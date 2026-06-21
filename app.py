@@ -480,6 +480,11 @@ def spotify_image_proxy():
     return resp
 
 
+@app.route("/impressum")
+def impressum():
+    return send_from_directory(".", "impressum.txt")
+
+
 @app.before_request
 def before_request():
     # Redirect to HTTPS
