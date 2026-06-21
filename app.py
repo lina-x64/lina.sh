@@ -481,6 +481,7 @@ def spotify_image_proxy():
 
 
 @app.route("/impressum")
+@robots.noindex
 def impressum():
     return send_from_directory(".", "impressum.txt")
 
