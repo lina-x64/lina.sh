@@ -510,8 +510,13 @@ section {
         max-width: 100%;
     }
 }
-@media (max-width: 380px) {
+@media (max-width: 600px) {
     .tz {
+        display: none;
+    }
+}
+@media (max-width: 350px) {
+    .please-read-txt {
         display: none;
     }
 }
@@ -521,7 +526,7 @@ section {
         content: "welcome to my website\00A0\00A0\00A0\00A0\00A0\00A0";
     }
     10% {
-        content: "welcome to my website.\00A0\00A0\00A0\00A0\00A0";
+        content: "welcome to my website.\00A0\00A0\00A0\00A0\00Aimp0";
     }
     20% {
         content: "welcome to my website..\00A0\00A0\00A0\00A0";
