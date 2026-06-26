@@ -165,6 +165,15 @@
             <article class="blog-content">
                 {{ blog.content|safe }}
             </article>
+
+            <div class="donation-buttons">
+                {% include 'partials/blog_donation.html' %}
+            </div>
+
+            <div class="discord-invite">
+                {% include 'partials/discord_invite.html' %}
+            </div>
+
             {%  if blog.language == 'en' %}
                 <div class="comments">
                     {% include 'partials/comments.html' %}

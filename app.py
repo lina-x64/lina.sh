@@ -117,7 +117,12 @@ def blog_post(url_name=None):
             user_data=user_data,
             copyright=random_copyright_year(),
             style_hash=blog_style_hash,
-            generate_proxy_url=generate_proxy_url
+            generate_proxy_url=generate_proxy_url,
+            xmr_address=const.XMR_DONATION_ADDRESS,
+            btc_address=const.BTC_DONATION_ADDRESS,
+            discord_status=discord_status,
+            discord_invite_url=const.DISCORD_INVITE,
+            discord_server_info=discord_server_info,
         )
     )
     if (blog_.original_url or blog_.url_name) == blogs.get_by_language("en")[0].url_name:

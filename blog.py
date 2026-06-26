@@ -86,6 +86,31 @@ class BlogPost:
                                      style='cursor: zoom-in;')
             img.wrap(a_wrapper)
 
+        for link in soup.find_all('a'):
+            href = link.get('href')
+            if href is None:
+                continue
+            if href.startswith('#'):
+                continue
+            link['target'] = '_blank'
+
+        footnote = soup.find(class_='footnote')
+        if footnote:
+            # turn the footnote div into a <details> element
+            details = soup.new_tag('details', **{'class': 'footnote'})
+
+            summary = soup.new_tag('summary', **{'class': 'footnote-summary'})
+            summary.string = 'Footnotes'
+
+            details.append(summary)
+            for child in list(footnote.children):
+                # ignore hr
+                if isinstance(child, bs4.element.Tag) and child.name == 'hr':
+                    continue
+                details.append(child.extract())
+            footnote.replace_with(details)
+
+
         return str(soup)
 
     def _get_comments_directory(self):

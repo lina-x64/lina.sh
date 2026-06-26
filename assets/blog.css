@@ -345,6 +345,44 @@ p, figure, ul, ol, pre, blockquote, table {
     }
 }
 
+.footnote summary {
+    font-size: 1.5em;
+    font-weight: bold;
+    margin-top: 0.5em;
+    cursor: pointer;
+    user-select: none;
+}
+/* when details is being expanded, animate the details content to grow in height */
+.footnote[open] > ol {
+    animation: openFootnote 0.3s ease-in-out;
+}
+
+
+@keyframes openFootnote {
+    0% {
+        max-height: 0;
+        opacity: 0;
+    }
+    100% {
+        max-height: 1000px;
+        opacity: 1;
+    }
+}
+.footnote:not([open]) > ol {
+    animation: closeFootnote 0.3s ease-in-out;
+}
+@keyframes closeFootnote {
+    0% {
+        max-height: 1000px;
+        opacity: 1;
+    }
+    100% {
+        max-height: 0;
+        opacity: 0;
+    }
+}
+
+
 .footnote p {
     text-align: start;
     word-break: break-word;
@@ -803,4 +841,138 @@ img.vgw-invisible {
     position: absolute;
     left: 0;
     top: 0;
+}
+
+
+.gh-sponsors-button {
+    display: inline-block;
+    padding: 5px 10px;
+
+    margin-right: 10px;
+    background-color: #24292e;
+    color: #ffffff;
+    text-decoration: none;
+    border-radius: 5px;
+    font-weight: bold;
+}
+.gh-sponsors-button svg {
+    vertical-align: middle;
+    margin-top: -2px;
+    fill: rgb(201, 97, 152);
+}
+
+.gh-sponsors-button:hover {
+    background-color: #444c56;
+    text-decoration: none;
+}
+
+.kofi-button img {
+    vertical-align: middle;
+    margin-right: 10px;
+}
+.kofi-button:hover {
+    text-decoration: none;
+}
+
+.display-xmr-checkbox, .display-btc-checkbox {
+    display: none;
+}
+#display-xmr:checked ~ .xmr-address,
+#display-btc:checked ~ .btc-address {
+    display: block;
+}
+.crypto-address {
+    display: none;
+}
+.crypto-content {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: var(--background-color);
+    color: var(--text-color);
+    padding: 20px;
+    border-radius: 10px;
+    z-index: 1000;
+    text-align: center;
+}
+@media (prefers-color-scheme: dark) {
+    .crypto-content {
+        border: 1px solid var(--secondary-background);
+    }
+}
+@media (prefers-color-scheme: light) {
+    .crypto-logo {
+        filter: invert(1);
+    }
+
+}
+
+.crypto-address-header {
+    margin-bottom: 10px;
+}
+.close-overlay {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    cursor: pointer;
+    height: 20px;
+    width: 20px;
+}
+.close-overlay::before {
+    content: "✖";
+    font-size: 20px;
+    color: var(--text-color);
+}
+
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+}
+
+.display-label::before {
+    content: "[";
+}
+.display-label::after {
+    content: "]";
+}
+.display-label {
+    cursor: pointer;
+    margin-right: 10px;
+    display: inline-flex;
+    align-items: center;
+}
+
+.crypto-logo {
+    width: 16px;
+    height: 16px;
+    margin-right: 5px;
+}
+
+.discord-invite {
+    margin-top: 20px;
+    width: max-content;
+    font-family: monospace;
+}
+.discord-invite-server-name {
+    color: var(--text-color) !important;
+}
+.discord-invite-status {
+    color: var(--secondary-text) !important;
+}
+.discord-invite-join-button:hover {
+    text-decoration: none;
+}
+@media (prefers-color-scheme: light) {
+    .dc-inline-logo {
+        filter: invert(1);
+    }
+    .discord-invite-widget {
+        border: 1px solid var(--secondary-background) !important;
+    }
 }
