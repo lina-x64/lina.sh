@@ -24,7 +24,8 @@ import robots
 from blog import get_blog_posts
 from dino import dino_game
 from helpers import get_discord_status, get_age, show_notification, \
-    format_iso_date, fishlogic, random_copyright_year, get_server_status, fetch_remote_image, generate_proxy_url
+    format_iso_date, fishlogic, random_copyright_year, get_server_status, fetch_remote_image, generate_proxy_url, \
+    is_safe_url
 from spotify import spotify_status_updater, event_reader, get_cover_bytes
 
 app = Flask(__name__, template_folder='pages')
@@ -242,7 +243,7 @@ def github_profile_image(user_id):
 @app.route('/github/login')
 def github_login():
     return_url = request.args.get("return")
-    if return_url and not return_url.startswith("/"):
+    if not is_safe_url(return_url):
         return_url = "/"
     return redirect(comment_auth.get_gh_oauth_url(return_url=return_url))
 
@@ -372,7 +373,7 @@ def reddit_profile_image(user_id):
 def logout():
     # Remove the cookie from the response
     redirect_url = request.form.get("redirect")
-    if not redirect_url or not redirect_url.startswith("/"):
+    if not is_safe_url(redirect_url):
         redirect_url = "/"
     resp = app.make_response(redirect(redirect_url))
     resp.set_cookie("account_jwt", "", expires=0, samesite="Lax", secure=True, httponly=True)

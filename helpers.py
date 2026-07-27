@@ -165,6 +165,11 @@ def random_copyright_year():
     return random.choice(years)
 
 
+def is_safe_url(target):
+    ref = urllib.parse.urlsplit(target)
+    return not ref.scheme and not ref.netloc and ref.path.startswith('/')
+
+
 def generate_proxy_url(remote_url):
     if not remote_url:
         return "/assets/mastodon.png"
