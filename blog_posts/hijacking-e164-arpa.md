@@ -103,6 +103,9 @@ Hundreds of thousands of ENUM queries, all logged[^query-breakdown]. Since the d
 you can simply flip it back around to get the real number, so I had full phone numbers, timestamps, and the source IP
 addresses of the DNS resolvers making the requests.
 
+![](/assets/blog/e164/log_screenshot.png)
+<div class="subtext">Hundreds of thousands of lines in logs looking just like this</div>
+
 Almost none of it was for Saint Helena (`0.9.2.e164.arpa`), it was basically almost entirely `6.4.2.e164.arpa` and
 `7.4.2.e164.arpa`: Diego Garcia and Ascension Island. The source IPs were mostly American. That would at least explain
 why I originally didn't see any traffic, as I was only logging Saint Helena.
@@ -147,5 +150,5 @@ registered one was in [2019](https://www.denic.de/fileadmin/Downloads/ENUM/ENUM-
 [^no-fun]: <img src="/assets/blog/e164/no-fun.png" style="display: inline-block; height: 6em; width: auto; vertical-align: top; margin: 0 0.25em;">
 [^query-breakdown]: At this point, a friend of mine ([86dd](https://86dd.eu/)) had set up a secondary nameserver for the zones, without any logging.
 I had logged 100,170 queries to `6.4.2.e164.arpa` and 99,902 queries to `7.4.2.e164.arpa`, and 9,133 queries to `0.9.2.e164.arpa`. 
-This should be approximately half of the total queries that were sent to us.
+This should be approximately half of the total queries that were sent to us; Meaning it were ~400.000 requests in total
 [^strike]: [Wikipedia: 2026 Iranian strike on Diego Garcia](https://en.wikipedia.org/wiki/2026_Iranian_strike_on_Diego_Garcia)
