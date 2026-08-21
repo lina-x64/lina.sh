@@ -104,7 +104,7 @@ you can simply flip it back around to get the real number, so I had full phone n
 addresses of the DNS resolvers making the requests.
 
 ![](/assets/blog/e164/log_screenshot.png)
-<div class="subtext">Hundreds of thousands of lines in logs looking just like this</div>
+<div class="subtext">Hundreds of thousands of lines in logs looking just like this (anonymized)</div>
 
 Almost none of it was for Saint Helena (`0.9.2.e164.arpa`), it was basically almost entirely `6.4.2.e164.arpa` and
 `7.4.2.e164.arpa`: Diego Garcia and Ascension Island. The source IPs were mostly American. That would at least explain
