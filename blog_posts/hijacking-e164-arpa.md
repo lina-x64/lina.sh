@@ -1,6 +1,6 @@
 Title: I accidentally logged hundreds of thousands of phone calls to military bases
 Summary: How an expired nameserver let me take over e164.arpa zones for multiple territories, and why I probably should have checked my logs sooner.
-Date: 2026-07-30
+Date: 2026-08-21
 Image: /assets/blog/e164/cover.png
 Hash: e164
 VGWort: 2a0774cfd693439a98cb0dc98424be9b
