@@ -1,0 +1,9 @@
+{
+  "user_name": "Reiner030",
+  "user_id": 29528,
+  "comment": "Good that you as a \"17 years old developer\" know ALL about DNS, network and ho companies offers THEIR services to THEIR customers but nothing about PROTECTION (resources and security).\r\n\r\nIf you would stay INSIDE of Telefonica based networks as I with my O2 VDSL line resolution IS FINE except that your DNS server name isn't resolvable ;-) :\r\n$ nslookup blau-sicherheit.info dns.telefonica.com\r\n*** Die Serveradresse für \"dns.telefonica.com\" kann nicht gefunden werden:\r\nServer:  pi.hole\r\nAddress:  192.168.188.2\r\n\r\nNicht autorisierende Antwort:\r\nName:    blau-sicherheit.info\r\nAddress:  154.199.243.252\r\n\r\nAnd from outside the response is CLEAR:\r\n$  nslookup blau-sicherheit.info 62.109.121.1\r\nServer:         62.109.121.1\r\nAddress:        62.109.121.1#53\r\n\r\n** server can't find blau-sicherheit.info: REFUSED\r\n\r\nSIP Service is also protected:\r\n$ nslookup sip.alice-voip.de\r\n...\r\nNon-authoritative answer:\r\n*** Can't find sip.alice-voip.de: No answer",
+  "timestamp": 1743591904.7744188,
+  "replies_to_id": null,
+  "platform": "github",
+  "profile_picture": null
+}
