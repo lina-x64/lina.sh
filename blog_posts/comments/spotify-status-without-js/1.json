@@ -1,0 +1,10 @@
+{
+    "user_name": "dgl",
+    "user_id": "@dgl@infosec.exchange",
+    "comment": "This is cool, a long time ago it used to be possible through the MIME type of multipart/x-mixed-replace to replace the whole resource (although IE never implemented it, so people avoided it). It still works in WebKit (i.e. Safari) but other browsers only support it for resources like images (and I tested it and none support it for CSS). It also was possible to switch content-type (e.g. show an HTML page, then an image); https://paste.sh/pJvpqdKm8 anyway, this technique brings a bit of that fun back.",
+    "timestamp": 1756958634.3483486,
+    "replies_to_id": null,
+    "platform": "mastodon",
+    "profile_picture": "https://media.infosec.exchange/infosec.exchange/accounts/avatars/109/262/485/386/996/881/original/104a8db966ce6a90.jpg",
+    "profile_url": "https://infosec.exchange/@dgl"
+}

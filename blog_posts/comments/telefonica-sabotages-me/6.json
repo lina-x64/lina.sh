@@ -1,0 +1,9 @@
+{
+  "user_name": "Reiner030",
+  "user_id": 29528,
+  "comment": "You can also proof it with e.g. correctly setup DNS checker like: https://dnsmid.com/germany/\r\nand see how bad DNS checker works trying: https://www.gdnspc.com/dns-propagation-checker/de.html which has nearly no successful request / always changing results every reload.\r\nGlobally you should search out for \"Looking Glass\" services offered by many global / backbone providers like Telefonica,  Colt, Level3 and others.",
+  "timestamp": 1743592572.9163964,
+  "replies_to_id": null,
+  "platform": "github",
+  "profile_picture": null
+}

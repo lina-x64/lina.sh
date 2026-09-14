@@ -24,6 +24,7 @@ country decide on delegation themselves).
 The idea was that carriers could then look these domains up and get back a record saying "hey, this number can be
 reached over SIP/VoIP under this address", skipping the expensive phone network and re-routing calls over the cheap 
 internet instead.
+Thanks to that, completely normal phone calls can be routed over SIP.
 
 It never really took off though, and even back in its early days it saw barely any use. Over the years it just
 deteriorated further, and today it's basically completely dead. I do actually own
