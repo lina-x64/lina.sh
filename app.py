@@ -70,7 +70,9 @@ def index():
 @app.route('/discord_status')
 @robots.noindex
 def discord_status_route():
-    refresh_every = request.args.get("refresh_every", 10)
+    refresh_every = request.args.get("refresh_every", "10")
+    if not refresh_every.isnumeric():
+        refresh_every = "10"
     return render_template("partials/discord_status.html", discord_status=discord_status, refresh_every=refresh_every)
 
 
