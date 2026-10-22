@@ -329,6 +329,7 @@ def mastodon_profile_image():
     resp = make_response(image_data)
     resp.headers["Content-Type"] = content_type or "image/png"
     resp.headers["Cache-Control"] = f"public, max-age={60 * 60 * 24}"
+    resp.headers["Content-Disposition"] = "attachment"
     return resp
 
 
