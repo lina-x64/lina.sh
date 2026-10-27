@@ -307,8 +307,10 @@ def event_reader(start_html: str, skip_rest=False):
     with queue_lock:
         shared_event_queues.add(event_queue)
 
+
+    deadline = time.time() + 600
     try:
-        while True:
+        while time.time() < deadline:
             try:
                 event = event_queue.get(timeout=10)
                 if event is None:
@@ -381,6 +383,7 @@ def spotify_status_updater():
                 # send a full update with static info
                 full_update_css = build_static_css(current_state)
                 event_writer(full_update_css)
+                last_state = current_state
 
                 # fetch and send lyrics as a separate update to not make the client wait
                 lyrics = fetch_lyrics(current_state.track_id)

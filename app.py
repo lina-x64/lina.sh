@@ -200,16 +200,35 @@ def email_svg():
 def listening_to():
     refresh = request.args.get("refresh")
 
-    resp = render_template("partials/listening_to.html", refresh=refresh)
-    if refresh:
+    outer = request.args.get("outer")
+
+    resp = render_template("partials/listening_to.html", refresh=refresh, outer=outer)
+    if refresh or outer:
         return event_reader(resp, skip_rest=True), 200, {
             "Cache-Control": "no-cache",
             "Content-Type": "text/html; charset=utf-8",
-            "Refresh": "5; url=/listening_to"
+            "Refresh": "5; url=/listening_to?outer=1" if refresh else "1; url=/np/a"
         }
 
     return event_reader(resp), 200, {
         "Cache-Control": "no-cache",
+        "Content-Type": "text/html; charset=utf-8"
+    }
+
+
+@app.route('/np/<side>')
+@robots.noindex
+def listening_to_wrapper(side):
+    return f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="refresh" content="1;url=/np/{'b' if side == 'a' else 'a'}"> 
+    <style>html, body, iframe {{ width: 100%; height: 100%; margin: 0; border: none; display: block; overflow: hidden; }}</style>
+</head>
+<body><iframe src="/listening_to?inner=1"></iframe></body>
+</html>""", 200, {
+        "Cache-Control": "public, max-age=86400, immutable",
         "Content-Type": "text/html; charset=utf-8"
     }
 

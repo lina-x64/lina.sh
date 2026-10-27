@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     {% if refresh %}
-        <meta http-equiv="refresh" content="5;url=/listening_to">
+        <meta http-equiv="refresh" content="5;url=/listening_to?outer=1">
+    {% elif outer %}
+        <meta http-equiv="refresh" content="1;url=/np/a">
     {% endif %}
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Listening to</title>
@@ -233,5 +235,8 @@
             </p>
         </div>
     </div>
+    {% if outer %}
+        <iframe src="/listening_to" style="position: fixed; inset: 0; width: 100%; height: 100%; border: none;"></iframe>
+    {% endif %}
 </body>
 </html>
