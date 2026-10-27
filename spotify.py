@@ -177,17 +177,18 @@ def get_spotify_status(token: str) -> dict | None:
     except requests.RequestException as e:
         print(f"Error getting Spotify status: {e}")
         # rate limiting
-        if e.response and e.response.status_code == 429:
-            retry_after = max(e.response.headers.get("Retry-After", 3), 3)
+        if e.response is not None and e.response.status_code == 429:
+            retry_after = max(int(e.response.headers.get("Retry-After", 3)), 3)
             if retry_after > 1000:
                 print("We are being rate limited for too long, using fallback")
-                global current_token
+                global current_token, expires_on
                 if current_token == "main":
                     current_token = "fallback"
                 else:
                     current_token = "main"
+                expires_on = 0
             print(f"Rate limited. Waiting for {retry_after} seconds.")
-            time.sleep(retry_after)
+            time.sleep(retry_after if retry_after <= 1000 else 3)
         return None
 
 
@@ -271,7 +272,7 @@ def build_progress_css(state: SpotifyState) -> str:
 
 
 def build_lyrics_css(lyrics: dict[float, int], state: SpotifyState) -> str:
-    progress_s = state.progress_ms / 1000 + (time.time() - state.polled_at)
+    progress_s = state.progress_ms / 1000 + (time.time() - state.polled_at if state.is_playing else 0)
     duration_s = state.duration_ms / 1000
     unique_id = str(time.time()).replace(".", "")
 
@@ -283,7 +284,6 @@ def build_lyrics_css(lyrics: dict[float, int], state: SpotifyState) -> str:
         percentage = ts * 100 / duration_s
         css.append(f"{percentage:.4f}% {{ content: '{css_escape(line)}'; }}")
     css.append("}")
-    css.append(".song-lyrics { display: block; }")
     return f"<style>{' '.join(css)}</style>"
 
 
@@ -298,7 +298,7 @@ def event_reader(start_html: str, skip_rest=False):
         if current_lyrics:
             yield build_lyrics_css(current_lyrics, last_state)
         else:
-            yield "<style>.song-lyrics { display: none; }</style>"
+            yield "<style>.song-lyrics { display: none; } .song-lyrics::after { animation: none; content: ''; }</style>"
 
     if skip_rest:
         return
@@ -390,7 +390,9 @@ def spotify_status_updater():
                     event_writer(lyrics_update_css)
                 else:
                     # hide lyrics section if none are found
-                    event_writer("<style>.song-lyrics { display: none; }</style>")
+                    event_writer("<style>.song-lyrics { display: none; } .song-lyrics::after { animation: none; content: ''; }</style>")
+            elif current_lyrics and (current_state.is_playing != last_state.is_playing or abs(current_state.progress_ms - last_state.progress_ms - (current_state.polled_at - last_state.polled_at) * 1000 * last_state.is_playing) > 3000):
+                event_writer(build_lyrics_css(current_lyrics, current_state))
 
             last_state = current_state
             # always send a progress update to keep things synced
